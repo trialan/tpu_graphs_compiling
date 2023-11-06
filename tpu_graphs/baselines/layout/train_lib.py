@@ -123,7 +123,6 @@ def train(args: train_args.TrainArgs):
     history = model.fit(
         train_ds, epochs=1, verbose=1, validation_data=valid_ds,
         validation_freq=1)
-    import pdb;pdb.set_trace()
     if _PDB.value == i:
       pdb.set_trace()  # pylint: disable=forgotten-debug-statement
 
