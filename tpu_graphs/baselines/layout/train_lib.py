@@ -18,6 +18,7 @@ from tpu_graphs.baselines.layout import models
 from tpu_graphs.baselines.layout import train_args
 import tqdm
 
+tf.config.set_visible_devices([], 'GPU')
 
 _DATA_ROOT = flags.DEFINE_string(
     'data_root', '~/data/tpugraphs/npz/layout',
