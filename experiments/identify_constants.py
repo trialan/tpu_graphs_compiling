@@ -87,8 +87,8 @@ def remove_features_from_files(
             npz_file, output_dir, constant_node_feat, constant_node_config_feat
         )
 
-collections = ["xla", "nlp"]
-configs = ["default", "random"]
+collections = ["xla"]
+configs = ["random"]
 splits = ['train', 'test', 'valid']
 
 for collection in collections:
