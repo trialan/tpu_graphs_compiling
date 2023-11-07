@@ -68,16 +68,16 @@ if __name__ == '__main__':
     problems = ["layout", "tile"]
     collections = ["xla", "nlp"]
     configs = ["random", "default"]
+    splits = ["train", "test", "valid"]
 
     for prob in problems:
+        print(f"problem: {prob}")
         for collection in collections:
+            print(f"coll: {collection}")
             for config in configs:
-                print(f"coll: {collection}")
                 print(f"conf: {config}")
-                print(f"problem: {prob}")
 
-                input_dir = f"/home/paperspace/data/tpugraphs/npz/{prob}/{collection}/{config}/{split}"
-                output_dir = f"/home/paperspace/data/clean_tpugraphs_v2/npz/{prob}/{collection}/{config}/{split}"
+                input_dir = f"/home/paperspace/data/tpugraphs/npz/{prob}/{collection}/{config}"
 
                 npz_train_files = glob.glob(os.path.join(input_dir, "train/*.npz"))
                 npz_valid_files = glob.glob(os.path.join(input_dir, "valid/*.npz"))
@@ -89,7 +89,13 @@ if __name__ == '__main__':
 
                 constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
 
-                print(constant_node_config_feat)
-                print(constant_node_feat)
+                for split in splits:
+                    input_dir = f"/home/paperspace/data/tpugraphs/npz/{prob}/{collection}/{config}/{split}"
+                    output_dir = f"/home/paperspace/data/clean_tpugraphs_v2/npz/{prob}/{collection}/{config}/{split}"
 
-                remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
+                    npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
+
+                    remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
+
+
+
