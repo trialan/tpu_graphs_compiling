@@ -68,23 +68,28 @@ if __name__ == '__main__':
     problems = ["layout", "tile"]
     collections = ["xla", "nlp"]
     configs = ["random", "default"]
-    splits = ['train', 'test', 'valid']
 
     for prob in problems:
         for collection in collections:
             for config in configs:
-                for split in splits:
-                    print(f"coll: {collection}")
-                    print(f"conf: {config}")
-                    print(f"split: {split}")
+                print(f"coll: {collection}")
+                print(f"conf: {config}")
+                print(f"problem: {prob}")
 
-                    input_dir = f"/home/paperspace/data/tpugraphs/npz/{prob}/{collection}/{config}/{split}"
-                    output_dir = f"/home/paperspace/data/clean_tpugraphs_v2/npz/{prob}/{collection}/{config}/{split}"
+                input_dir = f"/home/paperspace/data/tpugraphs/npz/{prob}/{collection}/{config}/{split}"
+                output_dir = f"/home/paperspace/data/clean_tpugraphs_v2/npz/{prob}/{collection}/{config}/{split}"
 
-                    npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
-                    constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
+                npz_train_files = glob.glob(os.path.join(input_dir, "train/*.npz"))
+                npz_valid_files = glob.glob(os.path.join(input_dir, "valid/*.npz"))
+                npz_test_files = glob.glob(os.path.join(input_dir, "test/*.npz"))
 
-                    print(constant_node_config_feat)
-                    print(constant_node_feat)
+                npz_files = npz_train_files
+                npz_files.extend(npz_valid_files)
+                npz_files.extend(npz_test_files)
 
-                    remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
+                constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
+
+                print(constant_node_config_feat)
+                print(constant_node_feat)
+
+                remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
