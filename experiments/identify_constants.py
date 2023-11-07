@@ -65,25 +65,26 @@ def remove_features_from_files(
 
 
 if __name__ == '__main__':
-    collections = ["xla"]
-    configs = ["random"]
+    problems = ["layout", "tile"]
+    collections = ["xla", "nlp"]
+    configs = ["random", "default"]
     splits = ['train', 'test', 'valid']
 
-    for collection in collections:
-        for config in configs:
-            for split in splits:
+    for prob in problems:
+        for collection in collections:
+            for config in configs:
+                for split in splits:
+                    print(f"coll: {collection}")
+                    print(f"conf: {config}")
+                    print(f"split: {split}")
 
-                print(f"coll: {collection}")
-                print(f"conf: {config}")
-                print(f"split: {split}")
+                    input_dir = f"/users/thomasrialan/data/tpugraphs/npz/{prob}/{collection}/{config}/{split}"
+                    output_dir = f"/users/thomasrialan/data/clean_tpugraphs_v2/npz/{prob}/{collection}/{config}/{split}"
 
-                input_dir = f"/users/thomasrialan/data/tpugraphs/npz/layout/{collection}/{config}/{split}"
-                output_dir = f"/users/thomasrialan/data/clean_tpugraphs_v2/npz/layout/{collection}/{config}/{split}"
+                    npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
+                    constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
 
-                npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
-                constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
+                    print(constant_node_config_feat)
+                    print(constant_node_feat)
 
-                print(constant_node_config_feat)
-                print(constant_node_feat)
-
-                remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
+                    remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
