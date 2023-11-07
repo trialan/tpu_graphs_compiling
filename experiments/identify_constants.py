@@ -3,6 +3,7 @@ import os
 from tqdm import tqdm
 import glob
 
+
 def find_constant_features(npz_files):
     max_node_feat = None
     min_node_feat = None
@@ -37,31 +38,6 @@ def find_constant_features(npz_files):
     return constant_node_feat, constant_node_config_feat
 
 
-npz_files = []
-root = "/Users/thomasrialan/data/tpugraphs/npz/layout"
-for collection in ["xla", "nlp"]:
-    for config in ["random", "default"]:
-        for split in ["train", "valid", "test"]:
-            dataset_path = f"{root}/{collection}/{config}/{split}/*.npz"
-            files = glob.glob(dataset_path)
-            npz_files.extend(files)
-
-constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
-
-
-
-print(constant_node_config_feat)
-print(constant_node_feat)
-
-
-
-
-import numpy as np
-import os
-from tqdm import tqdm
-import glob
-
-
 def remove_features_from_file(
     npz_file, output_dir, constant_node_feat, constant_node_config_feat
 ):
@@ -87,23 +63,27 @@ def remove_features_from_files(
             npz_file, output_dir, constant_node_feat, constant_node_config_feat
         )
 
-collections = ["xla"]
-configs = ["random"]
-splits = ['train', 'test', 'valid']
 
-for collection in collections:
-    for config in configs:
-        for split in splits:
+if __name__ == '__main__':
+    collections = ["xla"]
+    configs = ["random"]
+    splits = ['train', 'test', 'valid']
 
-            print(f"coll: {collection}")
-            print(f"conf: {config}")
-            print(f"split: {split}")
+    for collection in collections:
+        for config in configs:
+            for split in splits:
 
-            input_dir = f"/users/thomasrialan/data/tpugraphs/npz/layout/{collection}/{config}/{split}"
-            output_dir = f"/users/thomasrialan/data/clean_tpugraphs_v1/npz/layout/{collection}/{config}/{split}"
+                print(f"coll: {collection}")
+                print(f"conf: {config}")
+                print(f"split: {split}")
 
-            npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
+                input_dir = f"/users/thomasrialan/data/tpugraphs/npz/layout/{collection}/{config}/{split}"
+                output_dir = f"/users/thomasrialan/data/clean_tpugraphs_v2/npz/layout/{collection}/{config}/{split}"
 
-            remove_features_from_files(
-                npz_files, output_dir, constant_node_feat, constant_node_config_feat
-            )
+                npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
+                constant_node_feat, constant_node_config_feat = find_constant_features(npz_files)
+
+                print(constant_node_config_feat)
+                print(constant_node_feat)
+
+                remove_features_from_files(npz_files, output_dir, constant_node_feat, constant_node_config_feat)
