@@ -423,8 +423,9 @@ class NpzDatasetPartition:
         self.node_opcode = tf.concat(self._data_dict.pop("node_opcode"), axis=0)
         self.edge_index = tf.concat(self._data_dict.pop("edge_index"), axis=0)
 
-        #evenness_feature = self._calculate_evenness_feature() #TR contrib
-        #self.node_feat = tf.concat([self.node_feat, evenness_feature], axis=1)
+        evenness_feature = self._calculate_evenness_feature() #TR contrib
+        #above has the correct dimesions, concat works fine
+        self.node_feat = tf.concat([self.node_feat, evenness_feature], axis=1)
 
         self.node_config_feat = tf.concat(
             self._data_dict.pop("node_config_feat"), axis=0
