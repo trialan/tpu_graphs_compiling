@@ -425,7 +425,7 @@ class NpzDatasetPartition:
 
         evenness_feature = self._calculate_evenness_feature() #TR contrib
         #above has the correct dimesions, concat works fine
-        self.node_feat = tf.concat([self.node_feat, evenness_feature], axis=1)
+        #self.node_feat = tf.concat([self.node_feat, evenness_feature], axis=1)
 
         self.node_config_feat = tf.concat(
             self._data_dict.pop("node_config_feat"), axis=0
@@ -606,7 +606,7 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)[:10]
+    files = tf.io.gfile.glob(glob_pattern)[:3]
     print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
