@@ -8,6 +8,7 @@ import os
 import pdb
 from typing import Any
 
+import numpy as np
 from absl import flags
 from absl import logging
 import tensorflow as tf
@@ -19,6 +20,13 @@ from tpu_graphs.baselines.layout import train_args
 import tqdm
 
 tf.config.set_visible_devices([], 'GPU')
+
+def set_seed(seed):
+    random.seed(seed)
+    tf.random.set_seed(seed)
+    np.random.seed(seed)
+
+set_seed(3141)
 
 _DATA_ROOT = flags.DEFINE_string(
     'data_root', '~/data/tpugraphs/npz/layout',
