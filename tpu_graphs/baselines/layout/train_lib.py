@@ -9,6 +9,8 @@ import pdb
 from typing import Any
 
 import numpy as np
+import random
+
 from absl import flags
 from absl import logging
 import tensorflow as tf
