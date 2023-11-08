@@ -97,7 +97,6 @@ def train(args: train_args.TrainArgs):
       data_root_dir, min_train_configs=num_configs,
       max_train_configs=args.max_configs,
       cache_dir=os.path.expanduser(_CACHE_DIR.value))
-  import pdb;pdb.set_trace() 
   batch_size = args.batch_size
 
   train_ds = (
