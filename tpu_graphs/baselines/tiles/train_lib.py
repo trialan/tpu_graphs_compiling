@@ -1,3 +1,17 @@
+# Copyright 2023 The tpu_graphs Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Library for running train-and-eval loop on tiles dataset."""
 
 import functools
@@ -17,6 +31,7 @@ from tpu_graphs.baselines.tiles import metrics
 from tpu_graphs.baselines.tiles import models
 from tpu_graphs.baselines.tiles import train_args
 import tqdm
+
 
 _DATA_ROOT = flags.DEFINE_string(
     'data_root', '~/data/tpugraphs/npz/tile/xla',
@@ -86,7 +101,6 @@ def train(args: train_args.TrainArgs):
       .shuffle(5000, reshuffle_each_iteration=True)
       .batch(batch_size, drop_remainder=True)
       .map(tfgnn.GraphTensor.merge_batch_to_components))
-
 
   # Model.
   model_class = getattr(models, args.model)
@@ -225,5 +239,3 @@ def write_least_runtimes_csv(
     csv_lines = stack_join([id_vector, csv_ranks], ',')
     fout.write(stack_join(csv_lines, '\n').numpy().decode('utf-8'))
   print('\n\n   ***  Wrote', out_csv_filepath, '\n\n')
-
-
