@@ -616,7 +616,8 @@ def get_npz_split(
         files = files[:5]
 
     cache_filename = None
-    if cache_dir:
+    if False:#cache_dir:
+        print("No if cache_dir nonsense")
         if not tf.io.gfile.exists(cache_dir):
             tf.io.gfile.makedirs(cache_dir)
         filename_hash = hashlib.md5(
