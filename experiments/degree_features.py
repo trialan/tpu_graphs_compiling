@@ -1,7 +1,10 @@
+import io
 import os
-from tqdm import tqdm
+
 import glob
 import numpy as np
+import tensorflow as tf
+from tqdm import tqdm
 
 def process_npz_files(input_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
@@ -12,7 +15,10 @@ def process_npz_files(input_dir, output_dir):
         updated_data = {key: data[key] for key in data.files if key != 'node_feat'}
         updated_data['node_feat'] = node_feat_updated
         output_file_path = os.path.join(output_dir, os.path.basename(npz_file_path))
-        np.savez(output_file_path, **updated_data)
+        bytes_io = io.BytesIO()
+        np.savez_compressed(bytes_io, **updated_data)
+        with tf.io.gfile.GFile(cache_file, "wb") as fout:
+            fout.write(bytes_io.getvalue())
 
 
 def add_degree_features(npz_file_path):
