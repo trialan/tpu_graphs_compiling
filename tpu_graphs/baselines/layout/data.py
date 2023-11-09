@@ -633,7 +633,6 @@ def get_npz_split(
             npz_dataset.add_npz_file(
                 graph_id, np_data, min_configs=min_configs, max_configs=max_configs
             )
-        import pdb;pdb.set_trace() 
         npz_dataset.finalize()
         if cache_filename:
             npz_dataset.save_to_file(cache_filename)
