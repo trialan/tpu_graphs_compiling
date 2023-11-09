@@ -12,15 +12,7 @@ def compute_graph_features(edge_index):
 
     # Compute features and convert them to numpy arrays
     pagerank_array = np.array(list(nx.pagerank(G).values()))
-    load_centrality_array = np.array(list(nx.load_centrality(G).values()))
-    katz_centrality_array = np.array(list(nx.katz_centrality_numpy(G).values()))
-    harmonic_centrality_array = np.array(list(nx.harmonic_centrality(G).values()))
-    average_neighbor_degree_array = np.array(list(nx.average_neighbor_degree(G).values()))
-    kcore_array = np.array(list(nx.core_number(G).values()))
-    clustering_array = np.array(list(nx.clustering(G).values()))
-    constraint_array = np.array(list(nx.constraint(G).values()))
-    assortativity = nx.degree_assortativity_coefficient(G)
-    assortativity_array = np.full(G.number_of_nodes(), assortativity)
+    #average_neighbor_degree_array = np.array(list(nx.average_neighbor_degree(G).values()))
 
     in_degrees = dict(G.in_degree())
     out_degrees = dict(G.out_degree())
@@ -38,14 +30,7 @@ def compute_graph_features(edge_index):
     # Create the dictionary of features
     graph_features = {
         'pagerank': pagerank_array,
-        'load_centrality': load_centrality_array,
-        'katz_centrality': katz_centrality_array,
-        'harmonic_centrality': harmonic_centrality_array,
         'average_neighbor_degree': average_neighbor_degree_array,
-        'kcore': kcore_array,
-        'clustering': clustering_array,
-        'constraint': constraint_array,
-        'assortativity': assortativity_array,
         'in_degree': in_degrees,
         'out_degree': out_degrees,
         'clustering_coefficient': clustering_coefficients,
