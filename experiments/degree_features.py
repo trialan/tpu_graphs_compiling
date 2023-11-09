@@ -1,13 +1,13 @@
 import os
+from tqdm import tqdm
 import glob
-
-
+import numpy as np
 
 def process_npz_files(input_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     npz_files = glob.glob(os.path.join(input_dir, '*.npz'))
 
-    for npz_file_path in npz_files:
+    for npz_file_path in tqdm(npz_files):
         node_feat_updated, data = add_degree_features(npz_file_path)
         updated_data = {key: data[key] for key in data.files if key != 'node_feat'}
         updated_data['node_feat'] = node_feat_updated
@@ -49,10 +49,12 @@ if __name__ == '__main__':
             input_dir = f"{root}/tpugraphs/npz/layout/{collection}"
 
             for split in splits:
+                print(f"Split: {split}")
                 input_dir = f"{root}/tpugraphs/npz/layout/{collection}/{config}/{split}"
                 output_dir = f"{root}/nodefeats_tpugraphs/npz/layout/{collection}/{config}/{split}"
 
                 npz_files = glob.glob(os.path.join(input_dir, "*.npz"))
+                print(f"Num. files: {len(npz_files)}")
 
                 process_npz_files(input_dir, output_dir)
 
