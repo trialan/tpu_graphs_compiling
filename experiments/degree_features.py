@@ -17,8 +17,7 @@ def process_npz_files(input_dir, output_dir):
         output_file_path = os.path.join(output_dir, os.path.basename(npz_file_path))
         bytes_io = io.BytesIO()
         np.savez_compressed(bytes_io, **updated_data)
-        import pdb;pdb.set_trace() 
-        with tf.io.gfile.GFile(cache_file, "wb") as fout:
+        with tf.io.gfile.GFile(output_file_path, "wb") as fout:
             fout.write(bytes_io.getvalue())
 
 
