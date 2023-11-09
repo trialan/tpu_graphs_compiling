@@ -607,6 +607,7 @@ def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
+    import pdb;pdb.set_trace() 
     glob_pattern = os.path.join(split_path, "*.npz")
     files = tf.io.gfile.glob(glob_pattern)[:3]
     print("ONLY USING SOME FILES FOR EXP!!!!")
