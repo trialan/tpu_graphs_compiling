@@ -317,6 +317,7 @@ class NpzDatasetPartition:
         )
         bytes_io = io.BytesIO()
         np.savez_compressed(bytes_io, **np_dict)
+        """
         with tf.io.gfile.GFile(cache_file, "wb") as fout:
             fout.write(bytes_io.getvalue())
         print("wrote " + cache_file)
@@ -324,6 +325,7 @@ class NpzDatasetPartition:
         with tf.io.gfile.GFile(graph_ids_file, "w") as fout:
             fout.write(b"\n".join(self.graph_id.numpy().tolist()).decode())
         print("wrote " + graph_ids_file)
+        """
 
     def load_from_file(self, cache_file: str):
         """Loads dataset from numpy file."""
