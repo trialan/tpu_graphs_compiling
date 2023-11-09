@@ -95,8 +95,9 @@ def train(args: train_args.TrainArgs):
   num_configs = args.configs
   dataset_partitions = data.get_npz_dataset(
       data_root_dir, min_train_configs=num_configs,
-      max_train_configs=args.max_configs,
-      cache_dir=os.path.expanduser(_CACHE_DIR.value))
+      max_train_configs=args.max_configs)
+      #cache_dir=os.path.expanduser(_CACHE_DIR.value)) DONT CACHE FOR
+      #DATA PROCESSING EXPERIMENTS
   batch_size = args.batch_size
 
   train_ds = (
@@ -107,6 +108,7 @@ def train(args: train_args.TrainArgs):
       .map(tfgnn.GraphTensor.merge_batch_to_components)
       .map(_graph_and_label))
 
+  import pdb;pdb.set_trace() 
   model = models.ResModel(num_configs, dataset_partitions.num_ops)
 
   loss = tfr.keras.losses.ListMLELoss()  # (temperature=10)
