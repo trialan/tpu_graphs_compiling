@@ -573,13 +573,12 @@ class NpzDataset(NamedTuple):
         max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
         return (feature_matrix - min_feat) / (max_feat - min_feat)
 
-    """Removes constant features and normalizes remaining onto [0, 1].
-
-    The statistics are computed only from train partition then applied to all
-    partitions {train, test, validation}.
-    """
-
     def normalize(self):
+        """Removes constant features and normalizes remaining onto [0, 1].
+
+        The statistics are computed only from train partition then applied to all
+        partitions {train, test, validation}.
+        """
         normalizer_args = self._get_normalizer(self.train.node_feat)
         self.train.node_feat = self._apply_normalizer(
             self.train.node_feat, *normalizer_args
@@ -607,9 +606,9 @@ def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
-    import pdb;pdb.set_trace() 
     glob_pattern = os.path.join(split_path, "*.npz")
     files = tf.io.gfile.glob(glob_pattern)[:3]
+
     print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)

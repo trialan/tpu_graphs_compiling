@@ -44,6 +44,8 @@ _PDB = flags.DEFINE_integer(
     'debug', -1, 'If >0, pdb debugger will be entered after this many epochs.')
 
 
+
+
 def _graph_and_label(graph: tfgnn.GraphTensor):
   # Return runtimes divded over large number: only ranking is required. The
   # runtimes are in the 100K range
@@ -108,7 +110,11 @@ def train(args: train_args.TrainArgs):
       .map(tfgnn.GraphTensor.merge_batch_to_components)
       .map(_graph_and_label))
 
+  from eda import analyse
   import pdb;pdb.set_trace() 
+  analyse(train_ds)
+
+  """
   model = models.ResModel(num_configs, dataset_partitions.num_ops)
 
   loss = tfr.keras.losses.ListMLELoss()  # (temperature=10)
@@ -207,4 +213,4 @@ def train(args: train_args.TrainArgs):
     for graph_id, ranks in test_rankings:
       fout.write(f'layout:{args.source}:{args.search}:{graph_id},{ranks}\n')
   print('\n\n   ***  Wrote', args.results_csv, '\n\n')
-
+"""
