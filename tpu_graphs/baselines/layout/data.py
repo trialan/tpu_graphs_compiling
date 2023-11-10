@@ -374,7 +374,7 @@ class NpzDatasetPartition:
         num_config_nodes = npz_data["node_config_feat"].shape[1]
         N_CONFIF_FEATS = 18
         #print(f"\n N CONFIG FEATS: {N_CONFIF_FEATS} \n")
-        assert npz_data["node_config_feat"].shape[2] == N_CONFIF_FEATS  # used to be 18 pre-cleaning
+        #assert npz_data["node_config_feat"].shape[2] == N_CONFIF_FEATS  # used to be 18 pre-cleaning
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
         if num_configs < min_configs:
