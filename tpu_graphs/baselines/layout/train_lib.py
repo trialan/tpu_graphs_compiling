@@ -31,11 +31,11 @@ def set_seed(seed):
 set_seed(3141)
 
 _DATA_ROOT = flags.DEFINE_string(
-    'data_root', '~/data/clean_tpugraphs_v1/npz/layout',
+    'data_root', '~/data/tpugraphs/npz/layout',
     'Root directory containing dataset. It must contain subdirectories '
     '{train, test, valid}, each having many .npz files')
 _CACHE_DIR = flags.DEFINE_string(
-    'cache_dir', '~/data/clean_tpugraphs_v1/cache/layout',
+    'cache_dir', '~/data/tpugraphs/cache/layout',
     'If given, dataset tensors will be cached here for faster loading. Files '
     'with name "<hash>.npz" will be written, where <hash> is a hash of the '
     'filepattern of training data, i.e., it depends on the collection e.g., '
