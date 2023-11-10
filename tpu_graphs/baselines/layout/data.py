@@ -449,58 +449,13 @@ class NpzDatasetPartition:
         evenness_feature = self._calculate_evenness_feature()
         # Compute graph-based features for each node
         pagerank_features = self.compute_pagerank()
-        #in_degrees, out_degrees = self.compute_node_degrees()
-        #betweenness_features = self.compute_betweenness_centrality()
-        #closeness_features = self.compute_closeness_centrality()
 
         # Concatenate all features with node_feat
         self.node_feat = tf.concat([
             self.node_feat,
             evenness_feature,
             pagerank_features,
-            #in_degrees,
-            #out_degrees,
-            #betweenness_features,
-            #closeness_features
         ], axis=1)
-
-    def compute_node_degrees(self):
-        """Compute in-degree and out-degree for each node using TensorFlow."""
-        all_in_degrees = []
-        all_out_degrees = []
-
-        for index in range(len(self.edge_ranges) - 1):
-            edge_start = self.edge_ranges[index]
-            edge_end = self.edge_ranges[index + 1]
-            edges = self.edge_index[edge_start:edge_end]
-
-            num_nodes = self.node_ranges[index + 1] - self.node_ranges[index]
-
-            # Initialize degree tensors with zeros
-            in_degrees = tf.zeros([num_nodes], dtype=tf.int32)
-            out_degrees = tf.zeros([num_nodes], dtype=tf.int32)
-
-            # Get unique nodes and their degree counts
-            _, idx_in, counts_in = tf.unique_with_counts(edges[:, 1])
-            _, idx_out, counts_out = tf.unique_with_counts(edges[:, 0])
-
-            # Update the degrees
-            in_degrees = tf.tensor_scatter_nd_add(in_degrees, tf.expand_dims(idx_in, 1), counts_in)
-            out_degrees = tf.tensor_scatter_nd_add(out_degrees, tf.expand_dims(idx_out, 1), counts_out)
-
-            all_in_degrees.append(in_degrees)
-            all_out_degrees.append(out_degrees)
-
-        # Concatenate degrees from all graphs
-        all_in_degrees = tf.concat(all_in_degrees, axis=0)
-        all_out_degrees = tf.concat(all_out_degrees, axis=0)
-
-        all_out_degrees = tf.reshape(all_out_degrees, [-1, 1])
-        all_in_degrees = tf.reshape(all_in_degrees, [-1, 1])
-        all_in_degrees = tf.cast(all_in_degrees, tf.float32)
-        all_out_degrees = tf.cast(all_out_degrees, tf.float32)
-        return all_in_degrees, all_out_degrees
-
 
     def compute_pagerank(self):
         """Compute PageRank for each node."""
@@ -514,53 +469,32 @@ class NpzDatasetPartition:
             G = nx.DiGraph()
             G.add_edges_from(graph_edges)
 
-            pagerank = np.array(list(nx.pagerank(G).values()))
+            num_nodes = self.node_ranges[index + 1] - self.node_ranges[index]
+            pr = nx.pagerank(G)
+
+            # Ensure pagerank values for all nodes, including isolated ones
+            pagerank = [pr.get(node, 0) for node in range(num_nodes)]
             pagerank_features.extend(pagerank)
 
         pagerank_features = tf.convert_to_tensor(pagerank_features, dtype=tf.float32)
         return tf.reshape(pagerank_features, [-1, 1])
 
-    def compute_betweenness_centrality(self):
-        """Compute betweenness centrality for each node."""
-        betweenness_features = []
-
-        for index in tqdm.tqdm(range(len(self.edge_ranges) - 1), desc="BeCentr"):
-            edge_start = self.edge_ranges[index]
-            edge_end = self.edge_ranges[index + 1]
-            graph_edges = self.edge_index[edge_start:edge_end].numpy()
-
-            G = nx.DiGraph()
-            G.add_edges_from(graph_edges)
-
-            betweenness = np.array(list(nx.betweenness_centrality(G).values()))
-            betweenness_features.extend(betweenness)
-
-        return tf.convert_to_tensor(betweenness_features, dtype=tf.float32)
-
-    def compute_closeness_centrality(self):
-        """Compute closeness centrality for each node."""
-        closeness_features = []
-
-        for index in tqdm.tqdm(range(len(self.edge_ranges) - 1), desc="CloCentr"):
-            edge_start = self.edge_ranges[index]
-            edge_end = self.edge_ranges[index + 1]
-            graph_edges = self.edge_index[edge_start:edge_end].numpy()
-
-            G = nx.DiGraph()
-            G.add_edges_from(graph_edges)
-
-            closeness = np.array(list(nx.closeness_centrality(G).values()))
-            closeness_features.extend(closeness)
-
-        return tf.convert_to_tensor(closeness_features, dtype=tf.float32)
-
-
     def _calculate_evenness_feature(self):
         all_edges = tf.reshape(self.edge_index, [-1])
         num_nodes = tf.shape(self.node_feat)[0]
-        degree = tf.math.unsorted_segment_sum(
-            tf.ones_like(all_edges), all_edges, num_nodes)
+
+        # Initialize degree tensor with zeros for all nodes (representing evenness)
+        degree = tf.zeros([num_nodes], dtype=tf.int32)
+
+        # Update degree for nodes present in edges
+        degree += tf.math.unsorted_segment_sum(
+            tf.ones_like(all_edges, dtype=tf.int32), all_edges, num_nodes)
+
+        # Calculate oddness (1 if odd degree, 0 if even)
+        # Since isolated nodes (degree 0) are even, they will remain 0
         oddness = tf.cast(degree % 2 == 1, tf.float32)
+
+        # Reshape to the desired format (n, 1) where n is the number of nodes
         oddness_feature = tf.reshape(oddness, [-1, 1])
         return oddness_feature
 
