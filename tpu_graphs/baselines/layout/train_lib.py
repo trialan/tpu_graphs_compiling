@@ -146,7 +146,7 @@ def train(args: train_args.TrainArgs):
     flags.FLAGS.alsologtostderr = old_alsologtostderr
     train_curve['epoch'].append(i)
     train_curve['train_loss'].append(history.history['loss'][-1])
-    train_curve['train_opa'].append(history.history['opa_metric'][-1])
+    train_curve['train_opa'].append(history.history['opa_metric'][0])
     train_curve['val_loss'].append(history.history['val_loss'][-1])
     train_curve['val_opa'].append(history.history['val_opa_metric'][-1])
     val_opa = history.history['val_opa_metric'][-1]

@@ -442,7 +442,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        self.add_features()
+        #self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
@@ -611,6 +611,14 @@ class NpzDataset(NamedTuple):
         max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
         return (feature_matrix - min_feat) / (max_feat - min_feat)
 
+    def _get_runtime_normalizer(self, runtimes) -> tuple[tf.Tensor, tf.Tensor]:
+        max_runtime = tf.reduce_max(runtimes)
+        min_runtime = tf.reduce_min(runtimes)
+        return min_runtime, max_runtime
+
+    def _apply_runtime_normalizer(self, runtimes, min_runtime, max_runtime):
+        return (runtimes - min_runtime) / (max_runtime - min_runtime)
+
     def normalize(self):
         """Removes constant features and normalizes remaining onto [0, 1].
 
@@ -639,13 +647,28 @@ class NpzDataset(NamedTuple):
             self.test.node_config_feat, *normalizer_args
         )
 
+        min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
+
+        # Store the min and max for un-normalization later if needed
+        #self.runtime_min = min_runtime
+        #self.runtime_max = max_runtime
+
+        self.train.config_runtime = self._apply_runtime_normalizer(
+            self.train.config_runtime, min_runtime, max_runtime
+        )
+        self.validation.config_runtime = self._apply_runtime_normalizer(
+            self.validation.config_runtime, min_runtime, max_runtime
+        )
+        self.test.config_runtime = self._apply_runtime_normalizer(
+            self.test.config_runtime, min_runtime, max_runtime
+        )
 
 def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)
+    files = tf.io.gfile.glob(glob_pattern)[:3]
 
     #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
