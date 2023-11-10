@@ -500,6 +500,8 @@ class NpzDatasetPartition:
 
         all_out_degrees = tf.reshape(all_out_degrees, [-1, 1])
         all_in_degrees = tf.reshape(all_in_degrees, [-1, 1])
+        all_in_degrees = tf.cast(all_in_degrees, tf.float32)
+        all_out_degrees = tf.cast(all_out_degrees, tf.float32)
         return all_in_degrees, all_out_degrees
 
 
@@ -712,7 +714,7 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)
+    files = tf.io.gfile.glob(glob_pattern)[:3]
 
     #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
