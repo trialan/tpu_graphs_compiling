@@ -35,6 +35,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gnn as tfgnn
 import tqdm
+import networkx as nx
 
 _TOY_DATA = flags.DEFINE_bool(
     "toy_data",
@@ -425,10 +426,6 @@ class NpzDatasetPartition:
         self.node_opcode = tf.concat(self._data_dict.pop("node_opcode"), axis=0)
         self.edge_index = tf.concat(self._data_dict.pop("edge_index"), axis=0)
 
-        evenness_feature = self._calculate_evenness_feature() #TR contrib
-        #above has the correct dimesions, concat works fine
-        #self.node_feat = tf.concat([self.node_feat, evenness_feature], axis=1)
-
         self.node_config_feat = tf.concat(
             self._data_dict.pop("node_config_feat"), axis=0
         )
@@ -445,18 +442,84 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
+        self.add_features()
+
+    def add_features(self):
+        """Add additional features to the dataset."""
+        evenness_feature = self._calculate_evenness_feature()
+        # Compute graph-based features for each node
+        pagerank_features = self.compute_pagerank()
+        #betweenness_features = self.compute_betweenness_centrality()
+        #closeness_features = self.compute_closeness_centrality()
+
+        # Concatenate all features with node_feat
+        self.node_feat = tf.concat([
+            self.node_feat,
+            evenness_feature,
+            pagerank_features,
+            #betweenness_features,
+            #closeness_features
+        ], axis=1)
+
+    def compute_pagerank(self):
+        """Compute PageRank for each node."""
+        pagerank_features = []
+
+        for index in tqdm.tqdm(range(len(self.edge_ranges) - 1), desc="PgRank"):
+            edge_start = self.edge_ranges[index]
+            edge_end = self.edge_ranges[index + 1]
+            graph_edges = self.edge_index[edge_start:edge_end].numpy()
+
+            G = nx.DiGraph()
+            G.add_edges_from(graph_edges)
+
+            pagerank = np.array(list(nx.pagerank(G).values()))
+            pagerank_features.extend(pagerank)
+
+        pagerank_features = tf.convert_to_tensor(pagerank_features, dtype=tf.float32)
+        return tf.reshape(pagerank_features, [-1, 1])
+
+    def compute_betweenness_centrality(self):
+        """Compute betweenness centrality for each node."""
+        betweenness_features = []
+
+        for index in tqdm.tqdm(range(len(self.edge_ranges) - 1), desc="BeCentr"):
+            edge_start = self.edge_ranges[index]
+            edge_end = self.edge_ranges[index + 1]
+            graph_edges = self.edge_index[edge_start:edge_end].numpy()
+
+            G = nx.DiGraph()
+            G.add_edges_from(graph_edges)
+
+            betweenness = np.array(list(nx.betweenness_centrality(G).values()))
+            betweenness_features.extend(betweenness)
+
+        return tf.convert_to_tensor(betweenness_features, dtype=tf.float32)
+
+    def compute_closeness_centrality(self):
+        """Compute closeness centrality for each node."""
+        closeness_features = []
+
+        for index in tqdm.tqdm(range(len(self.edge_ranges) - 1), desc="CloCentr"):
+            edge_start = self.edge_ranges[index]
+            edge_end = self.edge_ranges[index + 1]
+            graph_edges = self.edge_index[edge_start:edge_end].numpy()
+
+            G = nx.DiGraph()
+            G.add_edges_from(graph_edges)
+
+            closeness = np.array(list(nx.closeness_centrality(G).values()))
+            closeness_features.extend(closeness)
+
+        return tf.convert_to_tensor(closeness_features, dtype=tf.float32)
+
 
     def _calculate_evenness_feature(self):
-        # Flatten edge_index to consider both source and target nodes
         all_edges = tf.reshape(self.edge_index, [-1])
-        # Use the number of node features as the size for degree calculation
         num_nodes = tf.shape(self.node_feat)[0]
-        # Count occurrences of each node index to find degree
         degree = tf.math.unsorted_segment_sum(
             tf.ones_like(all_edges), all_edges, num_nodes)
-        # Calculate oddness (1 if odd degree, 0 if even)
         oddness = tf.cast(degree % 2 == 1, tf.float32)
-        # Reshape to the desired format (n, 1) where n is the number of nodes
         oddness_feature = tf.reshape(oddness, [-1, 1])
         return oddness_feature
 
@@ -579,7 +642,6 @@ class NpzDataset(NamedTuple):
         The statistics are computed only from train partition then applied to all
         partitions {train, test, validation}.
         """
-        import pdb;pdb.set_trace() 
         normalizer_args = self._get_normalizer(self.train.node_feat)
         self.train.node_feat = self._apply_normalizer(
             self.train.node_feat, *normalizer_args

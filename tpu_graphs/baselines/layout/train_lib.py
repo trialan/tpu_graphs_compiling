@@ -111,10 +111,8 @@ def train(args: train_args.TrainArgs):
       .map(_graph_and_label))
 
   from eda import analyse
-  import pdb;pdb.set_trace() 
-  analyse(train_ds)
+  #analyse(train_ds)
 
-  """
   model = models.ResModel(num_configs, dataset_partitions.num_ops)
 
   loss = tfr.keras.losses.ListMLELoss()  # (temperature=10)
@@ -213,4 +211,3 @@ def train(args: train_args.TrainArgs):
     for graph_id, ranks in test_rankings:
       fout.write(f'layout:{args.source}:{args.search}:{graph_id},{ranks}\n')
   print('\n\n   ***  Wrote', args.results_csv, '\n\n')
-"""
