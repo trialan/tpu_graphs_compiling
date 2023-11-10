@@ -449,7 +449,7 @@ class NpzDatasetPartition:
         evenness_feature = self._calculate_evenness_feature()
         # Compute graph-based features for each node
         pagerank_features = self.compute_pagerank()
-        in_degrees, out_degrees = self.compute_node_degrees()
+        #in_degrees, out_degrees = self.compute_node_degrees()
         #betweenness_features = self.compute_betweenness_centrality()
         #closeness_features = self.compute_closeness_centrality()
 
@@ -458,12 +458,11 @@ class NpzDatasetPartition:
             self.node_feat,
             evenness_feature,
             pagerank_features,
-            in_degrees,
-            out_degrees,
+            #in_degrees,
+            #out_degrees,
             #betweenness_features,
             #closeness_features
         ], axis=1)
-
 
     def compute_node_degrees(self):
         """Compute in-degree and out-degree for each node using TensorFlow."""
@@ -481,12 +480,13 @@ class NpzDatasetPartition:
             in_degrees = tf.zeros([num_nodes], dtype=tf.int32)
             out_degrees = tf.zeros([num_nodes], dtype=tf.int32)
 
-            # Update degrees for nodes present in edges
-            _, idx, in_degree_counts = tf.unique_with_counts(edges[:, 1])
-            in_degrees += tf.scatter_nd(tf.expand_dims(idx, 1), in_degree_counts, shape=[num_nodes])
+            # Get unique nodes and their degree counts
+            _, idx_in, counts_in = tf.unique_with_counts(edges[:, 1])
+            _, idx_out, counts_out = tf.unique_with_counts(edges[:, 0])
 
-            _, idx, out_degree_counts = tf.unique_with_counts(edges[:, 0])
-            out_degrees += tf.scatter_nd(tf.expand_dims(idx, 1), out_degree_counts, shape=[num_nodes])
+            # Update the degrees
+            in_degrees = tf.tensor_scatter_nd_add(in_degrees, tf.expand_dims(idx_in, 1), counts_in)
+            out_degrees = tf.tensor_scatter_nd_add(out_degrees, tf.expand_dims(idx_out, 1), counts_out)
 
             all_in_degrees.append(in_degrees)
             all_out_degrees.append(out_degrees)
@@ -494,7 +494,6 @@ class NpzDatasetPartition:
         # Concatenate degrees from all graphs
         all_in_degrees = tf.concat(all_in_degrees, axis=0)
         all_out_degrees = tf.concat(all_out_degrees, axis=0)
-
 
         all_out_degrees = tf.reshape(all_out_degrees, [-1, 1])
         all_in_degrees = tf.reshape(all_in_degrees, [-1, 1])
