@@ -464,6 +464,7 @@ class NpzDatasetPartition:
             #closeness_features
         ], axis=1)
 
+
     def compute_node_degrees(self):
         """Compute in-degree and out-degree for each node using TensorFlow."""
         all_in_degrees = []
@@ -476,18 +477,16 @@ class NpzDatasetPartition:
 
             num_nodes = self.node_ranges[index + 1] - self.node_ranges[index]
 
-            # Calculate in-degree and out-degree
+            # Initialize degree tensors with zeros
+            in_degrees = tf.zeros([num_nodes], dtype=tf.int32)
+            out_degrees = tf.zeros([num_nodes], dtype=tf.int32)
+
+            # Update degrees for nodes present in edges
             _, idx, in_degree_counts = tf.unique_with_counts(edges[:, 1])
-            in_degrees = tf.scatter_nd(
-                tf.expand_dims(idx, 1), 
-                in_degree_counts, 
-                shape=[num_nodes])
+            in_degrees += tf.scatter_nd(tf.expand_dims(idx, 1), in_degree_counts, shape=[num_nodes])
 
             _, idx, out_degree_counts = tf.unique_with_counts(edges[:, 0])
-            out_degrees = tf.scatter_nd(
-                tf.expand_dims(idx, 1), 
-                out_degree_counts, 
-                shape=[num_nodes])
+            out_degrees += tf.scatter_nd(tf.expand_dims(idx, 1), out_degree_counts, shape=[num_nodes])
 
             all_in_degrees.append(in_degrees)
             all_out_degrees.append(out_degrees)
