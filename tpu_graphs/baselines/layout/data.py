@@ -474,21 +474,19 @@ class NpzDatasetPartition:
             edge_end = self.edge_ranges[index + 1]
             edges = self.edge_index[edge_start:edge_end]
 
-            # Calculate in-degree and out-degree
-            # Assuming edges are represented as (source, target)
-            _, _, in_degree_counts = tf.unique_with_counts(edges[:, 1])
-            _, _, out_degree_counts = tf.unique_with_counts(edges[:, 0])
+            num_nodes = self.node_ranges[index + 1] - self.node_ranges[index]
 
-            # Since some nodes might not have any in-edges or out-edges,
-            # we need to ensure that we have the degree for each node
-            num_nodes = tf.reduce_max(edges) + 1
+            # Calculate in-degree and out-degree
+            _, idx, in_degree_counts = tf.unique_with_counts(edges[:, 1])
             in_degrees = tf.scatter_nd(
-                tf.expand_dims(tf.range(tf.size(in_degree_counts)), 1),
-                in_degree_counts,
+                tf.expand_dims(idx, 1), 
+                in_degree_counts, 
                 shape=[num_nodes])
+
+            _, idx, out_degree_counts = tf.unique_with_counts(edges[:, 0])
             out_degrees = tf.scatter_nd(
-                tf.expand_dims(tf.range(tf.size(out_degree_counts)), 1),
-                out_degree_counts,
+                tf.expand_dims(idx, 1), 
+                out_degree_counts, 
                 shape=[num_nodes])
 
             all_in_degrees.append(in_degrees)
@@ -497,6 +495,7 @@ class NpzDatasetPartition:
         # Concatenate degrees from all graphs
         all_in_degrees = tf.concat(all_in_degrees, axis=0)
         all_out_degrees = tf.concat(all_out_degrees, axis=0)
+
 
         all_out_degrees = tf.reshape(all_out_degrees, [-1, 1])
         all_in_degrees = tf.reshape(all_in_degrees, [-1, 1])
