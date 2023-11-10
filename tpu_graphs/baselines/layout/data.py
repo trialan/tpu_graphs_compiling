@@ -579,6 +579,7 @@ class NpzDataset(NamedTuple):
         The statistics are computed only from train partition then applied to all
         partitions {train, test, validation}.
         """
+        import pdb;pdb.set_trace() 
         normalizer_args = self._get_normalizer(self.train.node_feat)
         self.train.node_feat = self._apply_normalizer(
             self.train.node_feat, *normalizer_args
