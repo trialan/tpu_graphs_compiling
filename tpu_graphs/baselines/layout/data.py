@@ -35,7 +35,21 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gnn as tfgnn
 import tqdm
-import networkx as nx
+
+from tpu_graphs.baselines.layout.features import (
+        compute_pagerank,
+        compute_node_degree_oddness,
+        compute_clustering_coefficient,
+        compute_square_clustering, #a bit slow
+        compute_generalized_degree,
+        compute_structural_holes_metrics,
+        compute_degree_centrality,
+        compute_in_degree_centrality,
+        compute_out_degree_centrality,
+        compute_hits,
+        compute_average_neighbor_degree,
+        )
+
 
 _TOY_DATA = flags.DEFINE_bool(
     "toy_data",
@@ -442,61 +456,60 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        #self.add_features()
+        self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
-        evenness_feature = self._calculate_evenness_feature()
-        # Compute graph-based features for each node
-        pagerank_features = self.compute_pagerank()
+        avg_neigh_degree = compute_average_neighbor_degree(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        hits = compute_hits(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        outdegree_centrality = compute_out_degree_centrality(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        indegree_centrality = compute_in_degree_centrality(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        degree_centrality = compute_degree_centrality(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        constraint, eff_size, efficiency = compute_structural_holes_metrics(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        gen_degree = compute_generalized_degree(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        square_clustering = compute_square_clustering(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        clustering_coeff = compute_clustering_coefficient(
+                self.edge_ranges, self.node_ranges, self.edge_index)
+
+        evenness_feature = compute_node_degree_oddness(
+                self.edge_index, self.node_feat)
+
+        pagerank_features = compute_pagerank(
+                self.edge_ranges, self.node_ranges, self.edge_index)
 
         # Concatenate all features with node_feat
         self.node_feat = tf.concat([
             self.node_feat,
             evenness_feature,
             pagerank_features,
+            avg_neigh_degree,
+            outdegree_centrality,
+            indegree_centrality,
+            degree_centrality,
+            constraint,
+            eff_size,
+            efficiency,
+            clustering_coeff,
+            square_clustering,
+            gen_degree,
         ], axis=1)
 
-    def compute_pagerank(self):
-        """Compute PageRank for each node."""
-        pagerank_features = []
-
-        for index in tqdm.tqdm(range(len(self.edge_ranges) - 1), desc="PgRank"):
-            edge_start = self.edge_ranges[index]
-            edge_end = self.edge_ranges[index + 1]
-            graph_edges = self.edge_index[edge_start:edge_end].numpy()
-
-            G = nx.DiGraph()
-            G.add_edges_from(graph_edges)
-
-            num_nodes = self.node_ranges[index + 1] - self.node_ranges[index]
-            pr = nx.pagerank(G)
-
-            # Ensure pagerank values for all nodes, including isolated ones
-            pagerank = [pr.get(node, 0) for node in range(num_nodes)]
-            pagerank_features.extend(pagerank)
-
-        pagerank_features = tf.convert_to_tensor(pagerank_features, dtype=tf.float32)
-        return tf.reshape(pagerank_features, [-1, 1])
-
-    def _calculate_evenness_feature(self):
-        all_edges = tf.reshape(self.edge_index, [-1])
-        num_nodes = tf.shape(self.node_feat)[0]
-
-        # Initialize degree tensor with zeros for all nodes (representing evenness)
-        degree = tf.zeros([num_nodes], dtype=tf.int32)
-
-        # Update degree for nodes present in edges
-        degree += tf.math.unsorted_segment_sum(
-            tf.ones_like(all_edges, dtype=tf.int32), all_edges, num_nodes)
-
-        # Calculate oddness (1 if odd degree, 0 if even)
-        # Since isolated nodes (degree 0) are even, they will remain 0
-        oddness = tf.cast(degree % 2 == 1, tf.float32)
-
-        # Reshape to the desired format (n, 1) where n is the number of nodes
-        oddness_feature = tf.reshape(oddness, [-1, 1])
-        return oddness_feature
 
     def _compute_flat_config_ranges(self):
         num_configs = tf.cast(  # undo cumsum.
@@ -663,6 +676,7 @@ class NpzDataset(NamedTuple):
             self.test.config_runtime, min_runtime, max_runtime
         )
 
+
 def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
@@ -670,7 +684,7 @@ def get_npz_split(
     glob_pattern = os.path.join(split_path, "*.npz")
     files = tf.io.gfile.glob(glob_pattern)
 
-    #print("ONLY USING SOME FILES FOR EXP!!!!")
+    print("ONLY USING SOME 10 FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
     if _TOY_DATA.value:
@@ -678,7 +692,7 @@ def get_npz_split(
 
     cache_filename = None
     if False:#cache_dir:
-        print("No if cache_dir nonsense")
+        print("NO IF CACHE_DIR NONSENSE!!!!")
         if not tf.io.gfile.exists(cache_dir):
             tf.io.gfile.makedirs(cache_dir)
         filename_hash = hashlib.md5(
