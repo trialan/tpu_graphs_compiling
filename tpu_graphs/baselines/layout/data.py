@@ -51,6 +51,7 @@ from tpu_graphs.baselines.layout.features import (
         )
 
 
+
 _TOY_DATA = flags.DEFINE_bool(
     "toy_data",
     False,
@@ -59,9 +60,57 @@ _TOY_DATA = flags.DEFINE_bool(
 )
 
 
+class FeatureMatrixDB:
+    def __init__(self, feature_matrix, runtimes):
+        """ A table of graph-compiler config vectors and runtimes """
+        self.feature_matrix = feature_matrix
+        self.runtimes = runtimes
+
+    def find_most_aligned_runtime(self, input_vector):
+        input_vector = np.array(input_vector)
+        dot_products = self.feature_matrix.dot(input_vector)
+        # Set the dot product with itself to -inf to exclude it
+        np.fill_diagonal(dot_products, -np.inf)
+
+        most_aligned_index = np.argmax(dot_products)
+        return self.runtimes[most_aligned_index]
+
+
+def create_combined_feature_matrix_with_runtimes(db_partition):
+    # Extract the features and configuration IDs
+    node_feats = db_partition.node_feat.numpy()
+    node_config_ids = db_partition.node_config_ids.numpy()
+    node_config_feats = db_partition.node_config_feat.numpy()
+    config_runtimes = db_partition.config_runtime.numpy()
+
+    # Number of configurations
+    num_configs = node_config_feats.shape[0]
+
+    # Lists to store the combined feature vectors and corresponding runtimes
+    combined_features = []
+    runtime_list = []
+
+    for config_index in range(num_configs):
+        # Extract the configuration-specific features and runtime
+        config_feats = node_config_feats[config_index]
+        runtime = config_runtimes[config_index]
+
+        # For each configurable node, concatenate its features with the configuration features
+        for node_id, config_feat in zip(node_config_ids, config_feats):
+            combined_feat = np.concatenate([node_feats[node_id], config_feat])
+            combined_features.append(combined_feat)
+            runtime_list.append(runtime)  # Append the runtime for this configuration
+
+    # Convert the list of features and runtimes to numpy arrays
+    combined_feature_matrix = np.array(combined_features)
+    runtime_array = np.array(runtime_list)
+
+    return combined_feature_matrix, runtime_array
+
+
+
 class LayoutExample(NamedTuple):
     """Single example of layout graph."""
-
     total_nodes: tf.Tensor  # shape []
     total_edges: tf.Tensor  # shape []
     total_configs: tf.Tensor  # shape []
@@ -456,7 +505,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        self.add_features()
+        #self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
@@ -656,11 +705,13 @@ class NpzDataset(NamedTuple):
             self.test.node_config_feat, *normalizer_args
         )
 
-        min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
+        #MAP RUNTIMES TO DELTA-RUMTIMES
+        #import pdb;pdb.set_trace() 
+        #db = FeatureMatrixDB(
 
-        # Store the min and max for un-normalization later if needed
-        #self.runtime_min = min_runtime
-        #self.runtime_max = max_runtime
+        #NORMALIZE THE RUNTIMES TO [0-1]
+        """
+        min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
 
         self.train.config_runtime = self._apply_runtime_normalizer(
             self.train.config_runtime, min_runtime, max_runtime
@@ -671,14 +722,14 @@ class NpzDataset(NamedTuple):
         self.test.config_runtime = self._apply_runtime_normalizer(
             self.test.config_runtime, min_runtime, max_runtime
         )
-
+        """
 
 def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)
+    files = tf.io.gfile.glob(glob_pattern)[:2]
 
     #print("ONLY USING SOME 10 FILES FOR EXP!!!!")
     if not files:
