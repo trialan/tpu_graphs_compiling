@@ -678,9 +678,9 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)[:3]
+    files = tf.io.gfile.glob(glob_pattern)
 
-    print("ONLY USING SOME 10 FILES FOR EXP!!!!")
+    #print("ONLY USING SOME 10 FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
     if _TOY_DATA.value:
