@@ -503,7 +503,7 @@ class NpzDatasetPartition:
             clustering_coeff,
             gen_degree,
             hubs,
-            authorities
+            authorities,
             square_clustering,
         ], axis=1)
 
