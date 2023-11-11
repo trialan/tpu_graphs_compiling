@@ -463,9 +463,6 @@ class NpzDatasetPartition:
         avg_neigh_degree = compute_average_neighbor_degree(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
-        hits = compute_hits(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
         outdegree_centrality = compute_out_degree_centrality(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
@@ -475,16 +472,17 @@ class NpzDatasetPartition:
         degree_centrality = compute_degree_centrality(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
-        constraint, eff_size, efficiency = compute_structural_holes_metrics(
+        clustering_coeff = compute_clustering_coefficient(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
         gen_degree = compute_generalized_degree(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
-        square_clustering = compute_square_clustering(
+        hubs, authorities = compute_hits(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
-        clustering_coeff = compute_clustering_coefficient(
+
+        square_clustering = compute_square_clustering(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
         evenness_feature = compute_node_degree_oddness(
@@ -502,14 +500,12 @@ class NpzDatasetPartition:
             outdegree_centrality,
             indegree_centrality,
             degree_centrality,
-            constraint,
-            eff_size,
-            efficiency,
             clustering_coeff,
-            square_clustering,
             gen_degree,
+            hubs,
+            authorities
+            square_clustering,
         ], axis=1)
-
 
     def _compute_flat_config_ranges(self):
         num_configs = tf.cast(  # undo cumsum.
@@ -682,7 +678,7 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)
+    files = tf.io.gfile.glob(glob_pattern)[:3]
 
     print("ONLY USING SOME 10 FILES FOR EXP!!!!")
     if not files:
