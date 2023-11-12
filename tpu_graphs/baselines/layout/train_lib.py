@@ -109,6 +109,8 @@ def train(args: train_args.TrainArgs):
       .map(tfgnn.GraphTensor.merge_batch_to_components)
       .map(_graph_and_label))
 
+  print(f"NODE FEAT SHAPE: {dataset_partitions.train.node_feat.shape}")
+  import pdb;pdb.set_trace() 
   from eda import analyse
   #analyse(train_ds)
 
@@ -136,6 +138,7 @@ def train(args: train_args.TrainArgs):
   for i in range(args.epochs):
     old_alsologtostderr = flags.FLAGS.alsologtostderr
     flags.FLAGS.alsologtostderr = True
+    import pdb;pdb.set_trace() 
     history = model.fit(
         train_ds, epochs=1, verbose=1, validation_data=valid_ds,
         validation_freq=1)
