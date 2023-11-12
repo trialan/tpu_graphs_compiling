@@ -505,7 +505,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        self.add_features()
+        #self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
@@ -710,7 +710,6 @@ class NpzDataset(NamedTuple):
         #db = FeatureMatrixDB(
 
         #NORMALIZE THE RUNTIMES TO [0-1]
-        """
         min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
 
         self.train.config_runtime = self._apply_runtime_normalizer(
@@ -722,7 +721,6 @@ class NpzDataset(NamedTuple):
         self.test.config_runtime = self._apply_runtime_normalizer(
             self.test.config_runtime, min_runtime, max_runtime
         )
-        """
 
 def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
