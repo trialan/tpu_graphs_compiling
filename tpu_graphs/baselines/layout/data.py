@@ -429,7 +429,6 @@ class NpzDatasetPartition:
         evenness_feature = compute_node_degree_oddness(
                 edge_index, num_nodes)
 
-        import pdb;pdb.set_trace() 
         npz_data['node_feat'] = tf.concat([
             npz_data['node_feat'],
             avg_neigh_degree,
@@ -444,7 +443,6 @@ class NpzDatasetPartition:
             evenness_feature,
             ], axis=-1)
 
-        import pdb;pdb.set_trace() 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
         if num_configs < min_configs:
@@ -727,6 +725,7 @@ def get_npz_split(
         raise ValueError("No files matched: " + glob_pattern)
 
     npz_dataset = NpzDatasetPartition()
+    import pdb;pdb.set_trace() 
     for filename in tqdm.tqdm(files, desc="adding npz files (+features)"):
         np_data = np.load(tf.io.gfile.GFile(filename, "rb"))
         graph_id = os.path.splitext(os.path.basename(filename))[0]
