@@ -282,7 +282,6 @@ class NpzDatasetPartition:
     """Holds one data partition (train, test, validation) on device memory."""
 
     def __init__(self):
-        # Populated in `add_npz_file()`.
         self._data_dict: dict[str, list[np.ndarray]] = collections.defaultdict(list)
         self._num_edges: list[int] = [0]  # prepend with 0 to prep for cumsum.
         self._num_configs: list[int] = [0]  # ^^
@@ -395,8 +394,6 @@ class NpzDatasetPartition:
     ):
         """Copies data from npz file into this class instance.
 
-        After finishing all calls `add_npz_file()`, user must invoke `finalize()`.
-
         Args:
           graph_id: the filename (without extension) that npz_file was read from.
           npz_file: Output of np.load on a file from the TpuGraphs Tiles dataset.
@@ -408,6 +405,11 @@ class NpzDatasetPartition:
         npz_data = dict(npz_file.items())
         num_configs = npz_data["node_config_feat"].shape[0]
         num_config_nodes = npz_data["node_config_feat"].shape[1]
+
+        num_nodes = npz_data["node_feat"].shape[0]
+        random_feature = np.random.random(size=(num_nodes, 1))
+        npz_data["node_feat"] = np.concatenate([npz_data["node_feat"], random_feature], axis=-1)
+
         N_CONFIF_FEATS = 18
         #print(f"\n N CONFIG FEATS: {N_CONFIF_FEATS} \n")
         #assert npz_data["node_config_feat"].shape[2] == N_CONFIF_FEATS  # used to be 18 pre-cleaning
@@ -549,7 +551,6 @@ class NpzDatasetPartition:
 
     #@tf.function(autograph=False)
     def get_item(self, index: int) -> LayoutExample:
-        """Returns `LayoutExample` encoding graph (by order of `add_npz_file`)."""
         node_start = self.node_ranges[index]
         node_end = self.node_ranges[index + 1]
         edge_start = self.edge_ranges[index]
