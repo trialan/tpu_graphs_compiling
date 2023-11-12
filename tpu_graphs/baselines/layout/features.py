@@ -8,7 +8,7 @@ def compute_closeness_centrality(edge_ranges, node_ranges, edge_index):
     """Compute Closeness Centrality for each node."""
     closeness_centrality_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="ClosenessCentrality"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -30,7 +30,7 @@ def compute_average_neighbor_degree(edge_ranges, node_ranges, edge_index):
     """Compute the average neighbor degree for each node."""
     avg_neighbor_degree_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="AvgNeighborDeg"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -54,7 +54,7 @@ def compute_hits(edge_ranges, node_ranges, edge_index):
     hubs_features = []
     authorities_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="HITS"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -82,7 +82,7 @@ def compute_out_degree_centrality(edge_ranges, node_ranges, edge_index):
     """Compute Out-Degree Centrality for each node in a directed graph."""
     out_degree_centrality_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="OutDegreeCentrality"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -98,11 +98,12 @@ def compute_out_degree_centrality(edge_ranges, node_ranges, edge_index):
     out_degree_centrality_tensor = tf.convert_to_tensor(out_degree_centrality_features, dtype=tf.float32)
     return tf.reshape(out_degree_centrality_tensor, [-1, 1])
 
+
 def compute_in_degree_centrality(edge_ranges, node_ranges, edge_index):
     """Compute In-Degree Centrality for each node in a directed graph."""
     in_degree_centrality_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="InDegreeCentrality"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -123,7 +124,7 @@ def compute_degree_centrality(edge_ranges, node_ranges, edge_index):
     """Compute Degree Centrality for each node."""
     degree_centrality_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="Degree Centrality"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -147,7 +148,7 @@ def compute_structural_holes_metrics(edge_ranges, node_ranges, edge_index):
     effective_size_features = []
     efficiency_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="Structural Holes"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -192,7 +193,7 @@ def compute_generalized_degree(edge_ranges, node_ranges, edge_index, distance=1)
     """Compute the generalized degree for each node."""
     generalized_degree_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="Generalized Degree"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -220,7 +221,7 @@ def compute_square_clustering(edge_ranges, node_ranges, edge_index):
     """Compute square clustering coefficient for each node."""
     square_clustering_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="Square Clustering"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -243,7 +244,7 @@ def compute_clustering_coefficient(edge_ranges, node_ranges, edge_index):
     """Compute clustering coefficient for each node."""
     clustering_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="Clustering Coeff"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
@@ -266,7 +267,7 @@ def compute_pagerank(edge_ranges, node_ranges, edge_index):
     """Compute PageRank for each node."""
     pagerank_features = []
 
-    for index in tqdm(range(len(edge_ranges) - 1), desc="PageRank"):
+    for index in range(len(edge_ranges) - 1):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
         graph_edges = edge_index[edge_start:edge_end]
