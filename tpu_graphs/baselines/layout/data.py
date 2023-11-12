@@ -436,16 +436,17 @@ class NpzDatasetPartition:
             avg_neigh_degree,
             outdegree_centrality,
             ], axis=-1)
-            """
-            indegree_centrality,
-            degree_centrality,
-            clustering_coeff,
-            gen_degree,
-            hubs,
-            authorities,
-            pagerank_features,
-            evenness_feature,
-            ], axis=-1)
+        """
+        indegree_centrality,
+        degree_centrality,
+        clustering_coeff,
+        gen_degree,
+        hubs,
+        authorities,
+        pagerank_features,
+        evenness_feature,
+        ], axis=-1)
+        """
 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
