@@ -408,7 +408,6 @@ class NpzDatasetPartition:
         outdegree_centrality = compute_out_degree_centrality(
                 edge_ranges, node_ranges, edge_index)
 
-        """
         indegree_centrality = compute_in_degree_centrality(
                 edge_ranges, node_ranges, edge_index)
 
@@ -418,6 +417,7 @@ class NpzDatasetPartition:
         clustering_coeff = compute_clustering_coefficient(
                 edge_ranges, node_ranges, edge_index)
 
+        """
         gen_degree = compute_generalized_degree(
                 edge_ranges, node_ranges, edge_index)
 
@@ -435,11 +435,11 @@ class NpzDatasetPartition:
             npz_data['node_feat'],
             avg_neigh_degree,
             outdegree_centrality,
+            indegree_centrality,
+            degree_centrality,
+            clustering_coeff,
             ], axis=-1)
         """
-        indegree_centrality,
-        degree_centrality,
-        clustering_coeff,
         gen_degree,
         hubs,
         authorities,
