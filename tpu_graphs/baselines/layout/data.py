@@ -63,8 +63,7 @@ class FeatureMatrixDB:
         # Number of configurable nodes
         num_config_nodes = len(node_config_ids)
 
-        import pdb;pdb.set_trace()
-        for config_index in range(max_configs):
+        for config_index in range(max_configs - 1):
             # For each configuration, iterate through each configurable node
             for node_index, node_id in enumerate(node_config_ids):
                 node_feat = node_feats[node_id]
