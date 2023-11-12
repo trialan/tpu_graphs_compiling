@@ -402,6 +402,7 @@ class NpzDatasetPartition:
 
         edge_index = npz_data['edge_index']
 
+        """
         avg_neigh_degree = compute_average_neighbor_degree(
                 edge_ranges, node_ranges, edge_index)
 
@@ -442,7 +443,6 @@ class NpzDatasetPartition:
             pagerank_features,
             evenness_feature,
             ], axis=-1)
-        """
         """
 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
@@ -676,6 +676,7 @@ class NpzDataset(NamedTuple):
 
         """
         #NORMALIZE THE RUNTIMES TO [0-1]
+        print("\n Normalizing the runtimes \n")
         min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
 
         self.train.config_runtime = self._apply_runtime_normalizer(
