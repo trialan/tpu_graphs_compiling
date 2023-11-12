@@ -94,7 +94,7 @@ def train(args: train_args.TrainArgs):
   data_root_dir = os.path.join(
       os.path.expanduser(_DATA_ROOT.value), args.source, args.search)
   num_configs = args.configs
-  dataset_partitions, feature_db = data.get_npz_dataset(
+  dataset_partitions = data.get_npz_dataset(
       data_root_dir, min_train_configs=num_configs,
       max_train_configs=args.max_configs)
       #cache_dir=os.path.expanduser(_CACHE_DIR.value)) DONT CACHE FOR
@@ -140,8 +140,6 @@ def train(args: train_args.TrainArgs):
     history = model.fit(
         train_ds, epochs=1, verbose=1, validation_data=valid_ds,
         validation_freq=1)
-    if _PDB.value == i:
-      pdb.set_trace()  # pylint: disable=forgotten-debug-statement
 
     flags.FLAGS.alsologtostderr = old_alsologtostderr
     train_curve['epoch'].append(i)

@@ -63,7 +63,6 @@ class FeatureMatrixDB:
         # Number of configurable nodes
         num_config_nodes = len(node_config_ids)
 
-        import pdb;pdb.set_trace() 
         for config_index in tqdm.tqdm(range(max_configs - 1), desc="populating DB"):
             # For each configuration, iterate through each configurable node
             for node_index, node_id in enumerate(node_config_ids):
@@ -479,10 +478,11 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        #self.add_features()
+        self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
+        """
         avg_neigh_degree = compute_average_neighbor_degree(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
@@ -505,7 +505,6 @@ class NpzDatasetPartition:
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
 
-        """
         square_clustering = compute_square_clustering(
                 self.edge_ranges, self.node_ranges, self.edge_index)
         """
@@ -521,6 +520,10 @@ class NpzDatasetPartition:
             self.node_feat,
             evenness_feature,
             pagerank_features,
+            ], axis=1)
+    #            square_clustering,
+    """
+
             avg_neigh_degree,
             outdegree_centrality,
             indegree_centrality,
@@ -529,10 +532,6 @@ class NpzDatasetPartition:
             gen_degree,
             hubs,
             authorities,
-            ], axis=1)
-    #            square_clustering,
-    """
-
     """
 
     def _compute_flat_config_ranges(self):
@@ -548,6 +547,7 @@ class NpzDatasetPartition:
             )
         )
 
+    #@tf.function(autograph=False)
     def get_item(self, index: int) -> LayoutExample:
         """Returns `LayoutExample` encoding graph (by order of `add_npz_file`)."""
         node_start = self.node_ranges[index]
@@ -744,34 +744,15 @@ def get_npz_split(
     #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
-    if _TOY_DATA.value:
-        files = files[:5]
-
-    cache_filename = None
-    if False:#cache_dir:
-        print("NO IF CACHE_DIR NONSENSE!!!!")
-        if not tf.io.gfile.exists(cache_dir):
-            tf.io.gfile.makedirs(cache_dir)
-        filename_hash = hashlib.md5(
-            f"{split_path}:{min_configs}:{max_configs}:{_TOY_DATA.value}".encode()
-        ).hexdigest()
-        cache_filename = os.path.join(cache_dir, f"{filename_hash}-cache.npz")
-        print("dataset cache file: ", cache_filename)
 
     npz_dataset = NpzDatasetPartition()
-    if cache_filename and tf.io.gfile.exists(cache_filename):
-        npz_dataset.load_from_file(cache_filename)
-    else:
-        for filename in tqdm.tqdm(files):
-            np_data = np.load(tf.io.gfile.GFile(filename, "rb"))
-            graph_id = os.path.splitext(os.path.basename(filename))[0]
-            npz_dataset.add_npz_file(
-                graph_id, np_data, min_configs=min_configs, max_configs=max_configs
-            )
-        npz_dataset.finalize()
-        if cache_filename:
-            npz_dataset.save_to_file(cache_filename)
-
+    for filename in tqdm.tqdm(files):
+        np_data = np.load(tf.io.gfile.GFile(filename, "rb"))
+        graph_id = os.path.splitext(os.path.basename(filename))[0]
+        npz_dataset.add_npz_file(
+            graph_id, np_data, min_configs=min_configs, max_configs=max_configs
+        )
+    npz_dataset.finalize()
     return npz_dataset
 
 
@@ -796,6 +777,6 @@ def get_npz_dataset(
         ),
         test=get_npz_split(os.path.join(root_path, "test"), cache_dir=cache_dir),
     )
-    featurematrix_db =  npz_dataset.normalize(max_train_configs)
-    return npz_dataset, featurematrix_db
+    npz_dataset.normalize(max_train_configs)
+    return npz_dataset
 
