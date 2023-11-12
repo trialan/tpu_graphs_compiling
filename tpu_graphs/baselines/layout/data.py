@@ -407,7 +407,7 @@ class NpzDatasetPartition:
         num_config_nodes = npz_data["node_config_feat"].shape[1]
 
         num_nodes = npz_data["node_feat"].shape[0]
-        random_feature = np.random.random(size=(num_nodes, 1))
+        random_feature = np.random.random(size=(num_nodes, 1)).astype(npz_data["node_feat"].dtype)
         npz_data["node_feat"] = np.concatenate([npz_data["node_feat"], random_feature], axis=-1)
 
         N_CONFIF_FEATS = 18
