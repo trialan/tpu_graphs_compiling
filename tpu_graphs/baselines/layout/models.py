@@ -45,7 +45,7 @@ class ResModel(tf.keras.Model):
 
   def call(self, graph: tfgnn.GraphTensor, training: bool = False):
     del training
-    print(f"\n\n   models.py call: {graph.node_sets['op']['feats'].shape} \n\n")
+    #print(f"\n\n   models.py call: {graph.node_sets['op']['feats'].shape} \n\n")
     return self.forward(graph, self._num_configs)
 
   def _node_level_forward(
@@ -53,7 +53,7 @@ class ResModel(tf.keras.Model):
       config_features: tf.Tensor,
       graph: tfgnn.GraphTensor, num_configs: int,
       edgeset_prefix='') -> tf.Tensor:
-    print(f"\n\n models.py _node_level_forward: {node_features.shape} \n\n")
+    #print(f"\n\n models.py _node_level_forward: {node_features.shape} \n\n")
     adj_op_op = implicit.AdjacencyMultiplier(
         graph, edgeset_prefix+'feed')  # op->op
     adj_config = implicit.AdjacencyMultiplier(
@@ -88,9 +88,9 @@ class ResModel(tf.keras.Model):
         graph.node_sets['op']['op_e']
     ], axis=-1)
 
-    print(f"\n   models.py forward: op feats {graph.node_sets['op']['feats'].shape} \n")
-    print(f"\n models.py forward: op_e {graph.node_sets['op']['op_e'].shape}")
-    print(f"\n   models.py forward: node feats {node_features.shape} \n")
+    #print(f"\n   models.py forward: op feats {graph.node_sets['op']['feats'].shape} \n")
+    #print(f"\n models.py forward: op_e {graph.node_sets['op']['op_e'].shape}")
+    #print(f"\n   models.py forward: node feats {node_features.shape} \n")
     x_full = self._node_level_forward(
         node_features=tf.stop_gradient(node_features),
         config_features=tf.stop_gradient(config_features),
