@@ -741,7 +741,6 @@ def get_npz_split(
     glob_pattern = os.path.join(split_path, "*.npz")
     files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
 
-    import pdb;pdb.set_trace() 
     #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
