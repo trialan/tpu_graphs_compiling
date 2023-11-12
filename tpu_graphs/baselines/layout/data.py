@@ -725,7 +725,6 @@ def get_npz_split(
         raise ValueError("No files matched: " + glob_pattern)
 
     npz_dataset = NpzDatasetPartition()
-    import pdb;pdb.set_trace() 
     for filename in tqdm.tqdm(files, desc="adding npz files (+features)"):
         np_data = np.load(tf.io.gfile.GFile(filename, "rb"))
         graph_id = os.path.splitext(os.path.basename(filename))[0]
