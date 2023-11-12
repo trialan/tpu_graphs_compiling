@@ -408,7 +408,7 @@ class NpzDatasetPartition:
 
         num_nodes = npz_data["node_feat"].shape[0]
         random_feature = np.random.random(size=(num_nodes, 1)).astype(npz_data["node_feat"].dtype)
-        npz_data["node_feat"] = np.concatenate([npz_data["node_feat"], random_feature], axis=-1)
+        #npz_data["node_feat"] = np.concatenate([npz_data["node_feat"], random_feature], axis=-1)
 
         N_CONFIF_FEATS = 18
         #print(f"\n N CONFIG FEATS: {N_CONFIF_FEATS} \n")
@@ -480,7 +480,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        self.add_features()
+        #self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
