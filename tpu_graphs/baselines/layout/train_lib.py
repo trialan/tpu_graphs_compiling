@@ -137,7 +137,6 @@ def train(args: train_args.TrainArgs):
   for i in range(args.epochs):
     old_alsologtostderr = flags.FLAGS.alsologtostderr
     flags.FLAGS.alsologtostderr = True
-    import pdb;pdb.set_trace() 
     history = model.fit(
         train_ds, epochs=1, verbose=1, validation_data=valid_ds,
         validation_freq=1)
