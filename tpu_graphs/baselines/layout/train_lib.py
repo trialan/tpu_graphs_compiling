@@ -110,7 +110,6 @@ def train(args: train_args.TrainArgs):
       .map(_graph_and_label))
 
   print(f"NODE FEAT SHAPE: {dataset_partitions.train.node_feat.shape}")
-  import pdb;pdb.set_trace() 
   from eda import analyse
   #analyse(train_ds)
 
