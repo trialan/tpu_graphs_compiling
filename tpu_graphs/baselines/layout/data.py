@@ -104,7 +104,7 @@ class LayoutExample(NamedTuple):
 
     def to_graph_tensor(
         self, config_samples: int = -1, max_nodes: int = -1
-    ) -> tfgnn.GraphTensor:
+    ) -> tfgnn.GraphTensor
         """Returns `GraphTensor` (sampled if `max(max_nodes, config_samples) >= 0`).
 
         Args:
@@ -479,7 +479,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        self.add_features()
+        #self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
