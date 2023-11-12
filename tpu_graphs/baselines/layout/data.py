@@ -63,7 +63,8 @@ class FeatureMatrixDB:
         # Number of configurable nodes
         num_config_nodes = len(node_config_ids)
 
-        for config_index in range(max_configs - 1):
+        import pdb;pdb.set_trace() 
+        for config_index in tqdm.tqdm(range(max_configs - 1), desc="populating DB"):
             # For each configuration, iterate through each configurable node
             for node_index, node_id in enumerate(node_config_ids):
                 node_feat = node_feats[node_id]
@@ -478,7 +479,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        #self.add_features()
+        self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
@@ -504,8 +505,10 @@ class NpzDatasetPartition:
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
 
+        """
         square_clustering = compute_square_clustering(
                 self.edge_ranges, self.node_ranges, self.edge_index)
+        """
 
         evenness_feature = compute_node_degree_oddness(
                 self.edge_index, self.node_feat)
@@ -526,8 +529,8 @@ class NpzDatasetPartition:
             gen_degree,
             hubs,
             authorities,
-            square_clustering,
-        ], axis=1)
+            ], axis=1)
+    #            square_clustering,
 
     def _compute_flat_config_ranges(self):
         num_configs = tf.cast(  # undo cumsum.
@@ -679,6 +682,7 @@ class NpzDataset(NamedTuple):
             self.test.node_config_feat, *normalizer_args
         )
 
+        """
         mean_train_runtime = np.mean(self.train.config_runtime)
 
         db = FeatureMatrixDB(self.train, max_configs)
@@ -686,6 +690,7 @@ class NpzDataset(NamedTuple):
         for partition in [self.train, self.validation, self.test]:
             append_aligned_runtimes_to_features(partition, db,
                                                 mean_train_runtime)
+
 
         #NORMALIZE THE RUNTIMES TO [0-1]
         min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
@@ -701,6 +706,7 @@ class NpzDataset(NamedTuple):
         )
 
         return db
+        """
 
 
 def append_aligned_runtimes_to_features(ds_partition, feature_db, mean_train_runtime):
@@ -730,7 +736,7 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = tf.io.gfile.glob(glob_pattern)
+    files = tf.io.gfile.glob(glob_pattern)[:3]
 
     #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
