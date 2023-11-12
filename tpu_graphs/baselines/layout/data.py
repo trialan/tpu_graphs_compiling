@@ -104,7 +104,7 @@ class LayoutExample(NamedTuple):
 
     def to_graph_tensor(
         self, config_samples: int = -1, max_nodes: int = -1
-    ) -> tfgnn.GraphTensor
+        ) -> tfgnn.GraphTensor:
         """Returns `GraphTensor` (sampled if `max(max_nodes, config_samples) >= 0`).
 
         Args:
