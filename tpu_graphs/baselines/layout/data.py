@@ -478,7 +478,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        #self.add_features()
+        self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
