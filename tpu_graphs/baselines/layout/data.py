@@ -482,6 +482,7 @@ class NpzDatasetPartition:
 
     def add_features(self):
         """Add additional features to the dataset."""
+        """
         avg_neigh_degree = compute_average_neighbor_degree(
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
@@ -504,7 +505,6 @@ class NpzDatasetPartition:
                 self.edge_ranges, self.node_ranges, self.edge_index)
 
 
-        """
         square_clustering = compute_square_clustering(
                 self.edge_ranges, self.node_ranges, self.edge_index)
         """
@@ -520,6 +520,10 @@ class NpzDatasetPartition:
             self.node_feat,
             evenness_feature,
             pagerank_features,
+            ], axis=1)
+    #            square_clustering,
+    """
+
             avg_neigh_degree,
             outdegree_centrality,
             indegree_centrality,
@@ -528,10 +532,6 @@ class NpzDatasetPartition:
             gen_degree,
             hubs,
             authorities,
-            ], axis=1)
-    #            square_clustering,
-    """
-
     """
 
     def _compute_flat_config_ranges(self):

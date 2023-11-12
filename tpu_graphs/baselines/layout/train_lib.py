@@ -109,10 +109,11 @@ def train(args: train_args.TrainArgs):
       .map(tfgnn.GraphTensor.merge_batch_to_components)
       .map(_graph_and_label))
 
-  print(f"NODE FEAT SHAPE: {dataset_partitions.train.node_feat.shape}")
+  print(f"\nDS PARTITIONS: {dataset_partitions.train.node_feat.shape}\n")
   from eda import analyse
   #analyse(train_ds)
 
+  print(f"\n train_ds: {train_ds.element_spec[0].node_sets_spec['op']['feats'].shape[1]}")
   model = models.ResModel(num_configs, dataset_partitions.num_ops)
 
   loss = tfr.keras.losses.ListMLELoss()  # (temperature=10)
@@ -130,6 +131,7 @@ def train(args: train_args.TrainArgs):
       .map(tfgnn.GraphTensor.merge_batch_to_components)
       .map(_graph_and_label))
 
+  print(f"\n valid_ds: {valid_ds.element_spec[0].node_sets_spec['op']['feats'].shape[1]}")
   best_params = None
   best_val_opa = -1
   best_val_at_epoch = -1
