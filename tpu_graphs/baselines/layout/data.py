@@ -674,6 +674,7 @@ class NpzDataset(NamedTuple):
                                                 mean_train_runtime)
 
 
+        """
         #NORMALIZE THE RUNTIMES TO [0-1]
         min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
 
@@ -687,8 +688,6 @@ class NpzDataset(NamedTuple):
             self.test.config_runtime, min_runtime, max_runtime
         )
 
-        return db
-        """
 
 
 def append_aligned_runtimes_to_features(ds_partition, feature_db, mean_train_runtime):
