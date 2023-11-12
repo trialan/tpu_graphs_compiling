@@ -399,7 +399,6 @@ class NpzDatasetPartition:
         num_edges = npz_data["edge_index"].shape[0]
         node_ranges = np.array([0, num_nodes])  # Assuming one graph per file
         edge_ranges = np.array([0, num_edges])  # Assuming one graph per file
-        """
 
         edge_index = npz_data['edge_index']
 
@@ -409,6 +408,7 @@ class NpzDatasetPartition:
         outdegree_centrality = compute_out_degree_centrality(
                 edge_ranges, node_ranges, edge_index)
 
+        """
         indegree_centrality = compute_in_degree_centrality(
                 edge_ranges, node_ranges, edge_index)
 
@@ -430,10 +430,13 @@ class NpzDatasetPartition:
         evenness_feature = compute_node_degree_oddness(
                 edge_index, num_nodes)
 
+        """
         npz_data['node_feat'] = tf.concat([
             npz_data['node_feat'],
             avg_neigh_degree,
             outdegree_centrality,
+            ], axis=-1)
+            """
             indegree_centrality,
             degree_centrality,
             clustering_coeff,
@@ -443,7 +446,6 @@ class NpzDatasetPartition:
             pagerank_features,
             evenness_feature,
             ], axis=-1)
-        """
 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
