@@ -1,28 +1,3 @@
-# Copyright 2023 The tpu_graphs Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""Functions to read layout .npz data files to `tf.data.Dataset`.
-
-The high-level function is `get_npz_dataset`, which can be called as:
-
-```
-dataset_partitions = get_npz_dataset('~/data/tpugraphs/npz/layout/xla/random')
-# Then access: dataset_partitions.{train, vaildation, test}
-# You may substite 'xla' with 'nlp' and 'random' with 'default'
-```
-"""
-
 import collections
 import functools
 import hashlib
@@ -50,8 +25,6 @@ from tpu_graphs.baselines.layout.features import (
         compute_average_neighbor_degree,
         )
 
-
-
 _TOY_DATA = flags.DEFINE_bool(
     "toy_data",
     False,
@@ -59,53 +32,53 @@ _TOY_DATA = flags.DEFINE_bool(
     "{train, test, validation} partitions.",
 )
 
-
 class FeatureMatrixDB:
-    def __init__(self, feature_matrix, runtimes):
+    def __init__(self, ds_partition, max_configs):
         """ A table of graph-compiler config vectors and runtimes """
+        feature_matrix, runtimes = self._extract_db_data(ds_partition,
+                                                         max_configs)
         self.feature_matrix = feature_matrix
         self.runtimes = runtimes
 
     def find_most_aligned_runtime(self, input_vector):
         input_vector = np.array(input_vector)
         dot_products = self.feature_matrix.dot(input_vector)
-        # Set the dot product with itself to -inf to exclude it
-        np.fill_diagonal(dot_products, -np.inf)
+
+        indices = np.where(np.all(self.feature_matrix == input_vector, axis=1))[0]
+        for index in indices:
+            dot_products[index] = -np.inf
 
         most_aligned_index = np.argmax(dot_products)
         return self.runtimes[most_aligned_index]
 
+    def _extract_db_data(self, db_partition, max_configs):
+        node_feats = db_partition.node_feat.numpy()
+        node_config_ids = db_partition.node_config_ids.numpy()
+        node_config_feats = db_partition.node_config_feat.numpy()
+        config_runtimes = db_partition.config_runtime.numpy()
 
-def create_combined_feature_matrix_with_runtimes(db_partition):
-    # Extract the features and configuration IDs
-    node_feats = db_partition.node_feat.numpy()
-    node_config_ids = db_partition.node_config_ids.numpy()
-    node_config_feats = db_partition.node_config_feat.numpy()
-    config_runtimes = db_partition.config_runtime.numpy()
+        combined_features = []
+        runtime_list = []
 
-    # Number of configurations
-    num_configs = node_config_feats.shape[0]
+        # Number of configurable nodes
+        num_config_nodes = len(node_config_ids)
 
-    # Lists to store the combined feature vectors and corresponding runtimes
-    combined_features = []
-    runtime_list = []
+        for config_index in range(max_configs - 1):
+            # For each configuration, iterate through each configurable node
+            for node_index, node_id in enumerate(node_config_ids):
+                node_feat = node_feats[node_id]
 
-    for config_index in range(num_configs):
-        # Extract the configuration-specific features and runtime
-        config_feats = node_config_feats[config_index]
-        runtime = config_runtimes[config_index]
+                config_feat_index = config_index * num_config_nodes + node_index
+                config_feat = node_config_feats[config_feat_index]
 
-        # For each configurable node, concatenate its features with the configuration features
-        for node_id, config_feat in zip(node_config_ids, config_feats):
-            combined_feat = np.concatenate([node_feats[node_id], config_feat])
-            combined_features.append(combined_feat)
-            runtime_list.append(runtime)  # Append the runtime for this configuration
+                combined_feat = np.concatenate([node_feat, config_feat])
+                combined_features.append(combined_feat)
+                runtime_list.append(config_runtimes[config_index])
 
-    # Convert the list of features and runtimes to numpy arrays
-    combined_feature_matrix = np.array(combined_features)
-    runtime_array = np.array(runtime_list)
+        combined_feature_matrix = np.array(combined_features)
+        runtime_array = np.array(runtime_list)
 
-    return combined_feature_matrix, runtime_array
+        return combined_feature_matrix, runtime_array
 
 
 
@@ -505,7 +478,7 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        self.add_features()
+        #self.add_features()
 
     def add_features(self):
         """Add additional features to the dataset."""
@@ -677,12 +650,13 @@ class NpzDataset(NamedTuple):
     def _apply_runtime_normalizer(self, runtimes, min_runtime, max_runtime):
         return (runtimes - min_runtime) / (max_runtime - min_runtime)
 
-    def normalize(self):
+    def normalize(self, max_configs):
         """Removes constant features and normalizes remaining onto [0, 1].
 
         The statistics are computed only from train partition then applied to all
         partitions {train, test, validation}.
         """
+
         normalizer_args = self._get_normalizer(self.train.node_feat)
         self.train.node_feat = self._apply_normalizer(
             self.train.node_feat, *normalizer_args
@@ -705,9 +679,13 @@ class NpzDataset(NamedTuple):
             self.test.node_config_feat, *normalizer_args
         )
 
-        #MAP RUNTIMES TO DELTA-RUMTIMES
-        #import pdb;pdb.set_trace() 
-        #db = FeatureMatrixDB(
+        mean_train_runtime = np.mean(self.train.config_runtime)
+
+        db = FeatureMatrixDB(self.train, max_configs)
+
+        for partition in [self.train, self.validation, self.test]:
+            append_aligned_runtimes_to_features(partition, db,
+                                                mean_train_runtime)
 
         #NORMALIZE THE RUNTIMES TO [0-1]
         min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
@@ -722,6 +700,31 @@ class NpzDataset(NamedTuple):
             self.test.config_runtime, min_runtime, max_runtime
         )
 
+        return db
+
+
+def append_aligned_runtimes_to_features(ds_partition, feature_db, mean_train_runtime):
+    extended_node_feats = []
+
+    for i in tqdm.tqdm(range(ds_partition.node_feat.shape[0]), desc="VectorSpaceTrick"):
+        node_features = ds_partition.node_feat[i].numpy()
+
+        # Check if the node is configurable and has config features
+        if i in ds_partition.node_config_ids.numpy():
+            config_index = np.where(ds_partition.node_config_ids.numpy() == i)[0][0]
+            config_features = ds_partition.node_config_feat[config_index].numpy()
+            combined_features = np.concatenate([node_features, config_features])
+
+            most_aligned_runtime = feature_db.find_most_aligned_runtime(combined_features)
+        else:
+            most_aligned_runtime = mean_train_runtime
+
+        extended_features = np.append(node_features, most_aligned_runtime)
+        extended_node_feats.append(extended_features)
+
+    ds_partition.node_feat = tf.convert_to_tensor(extended_node_feats, dtype=tf.float32)
+
+
 def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
@@ -729,7 +732,7 @@ def get_npz_split(
     glob_pattern = os.path.join(split_path, "*.npz")
     files = tf.io.gfile.glob(glob_pattern)
 
-    #print("ONLY USING SOME 10 FILES FOR EXP!!!!")
+    #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
     if _TOY_DATA.value:
@@ -769,23 +772,6 @@ def get_npz_dataset(
     max_train_configs=-1,
     cache_dir: "None | str" = None,
 ) -> NpzDataset:
-    """Returns {train, test, validation} partitions of layout dataset collection.
-
-    All partitions will be normalized: statistics are computed from training set
-    partition and applied to all partitions.
-
-    Args:
-      root_path: Path where dataset lives. It must have subdirectories 'train',
-        'test' and 'valid'.
-      min_train_configs: If > 0, then layout examples will be filtered to have at
-        least this many configurations (features and runtimes).
-      max_train_configs: Training and validation graphs will be truncated to
-        include only this many configurations. Set this according to your
-        available device memory. If you have lots of memory, you may set to -1,
-        to include all configurations for all {train, validation} graphs.
-      cache_dir: If given, the many files for each of {train, test, validation}
-        will be stored as one file (makes loading faster, for future runs).
-    """
     npz_dataset = NpzDataset(
         train=get_npz_split(
             os.path.join(root_path, "train"),
@@ -801,5 +787,6 @@ def get_npz_dataset(
         ),
         test=get_npz_split(os.path.join(root_path, "test"), cache_dir=cache_dir),
     )
-    npz_dataset.normalize()
-    return npz_dataset
+    featurematrix_db =  npz_dataset.normalize(max_train_configs)
+    return npz_dataset, featurematrix_db
+
