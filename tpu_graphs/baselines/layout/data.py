@@ -392,16 +392,6 @@ class NpzDatasetPartition:
         min_configs: int = 2,
         max_configs=-1,
     ):
-        """Copies data from npz file into this class instance.
-
-        Args:
-          graph_id: the filename (without extension) that npz_file was read from.
-          npz_file: Output of np.load on a file from the TpuGraphs Tiles dataset.
-          min_configs: The file be incorporated only if the number of module
-            configurations is equal or greater than this.
-          max_configs: If >0, only this many configurations will be sampled for the
-            graph.
-        """
         npz_data = dict(npz_file.items())
         num_configs = npz_data["node_config_feat"].shape[0]
         num_config_nodes = npz_data["node_config_feat"].shape[1]
@@ -409,6 +399,7 @@ class NpzDatasetPartition:
         num_edges = npz_data["edge_index"].shape[0]
         node_ranges = np.array([0, num_nodes])  # Assuming one graph per file
         edge_ranges = np.array([0, num_edges])  # Assuming one graph per file
+        """
 
         edge_index = npz_data['edge_index']
 
@@ -439,7 +430,6 @@ class NpzDatasetPartition:
         evenness_feature = compute_node_degree_oddness(
                 edge_index, num_nodes)
 
-        import pdb;pdb.set_trace() 
         npz_data['node_feat'] = tf.concat([
             npz_data['node_feat'],
             avg_neigh_degree,
@@ -453,10 +443,8 @@ class NpzDatasetPartition:
             pagerank_features,
             evenness_feature,
             ], axis=-1)
+        """
 
-
-
-        import pdb;pdb.set_trace() 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
         if num_configs < min_configs:
@@ -524,7 +512,6 @@ class NpzDatasetPartition:
         self.config_ranges = tf.cumsum(self._num_configs)
         self.node_split_ranges = tf.cumsum(self._num_node_splits)
         self._compute_flat_config_ranges()
-        #self.add_features()
 
 
     def _compute_flat_config_ranges(self):
