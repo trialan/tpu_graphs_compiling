@@ -63,6 +63,7 @@ class FeatureMatrixDB:
         # Number of configurable nodes
         num_config_nodes = len(node_config_ids)
 
+        import pdb;pdb.set_trace()
         for config_index in range(max_configs):
             # For each configuration, iterate through each configurable node
             for node_index, node_id in enumerate(node_config_ids):
@@ -680,6 +681,8 @@ class NpzDataset(NamedTuple):
         )
 
         mean_train_runtime = np.mean(self.train.config_runtime)
+        import pdb;pdb.set_trace() 
+
         db = FeatureMatrixDB(self.train, max_configs)
 
         import pdb;pdb.set_trace() 
