@@ -417,7 +417,6 @@ class NpzDatasetPartition:
         clustering_coeff = compute_clustering_coefficient(
                 edge_ranges, node_ranges, edge_index)
 
-        """
         gen_degree = compute_generalized_degree(
                 edge_ranges, node_ranges, edge_index)
 
@@ -430,7 +429,6 @@ class NpzDatasetPartition:
         evenness_feature = compute_node_degree_oddness(
                 edge_index, num_nodes)
 
-        """
         npz_data['node_feat'] = tf.concat([
             npz_data['node_feat'],
             avg_neigh_degree,
@@ -438,14 +436,13 @@ class NpzDatasetPartition:
             indegree_centrality,
             degree_centrality,
             clustering_coeff,
+            gen_degree,
+            hubs,
+            authorities,
+            pagerank_features,
+            evenness_feature,
             ], axis=-1)
         """
-        gen_degree,
-        hubs,
-        authorities,
-        pagerank_features,
-        evenness_feature,
-        ], axis=-1)
         """
 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
