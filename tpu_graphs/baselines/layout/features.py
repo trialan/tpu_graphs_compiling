@@ -11,7 +11,7 @@ def compute_closeness_centrality(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="ClosenessCentrality"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -33,7 +33,7 @@ def compute_average_neighbor_degree(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="AvgNeighborDeg"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -57,7 +57,7 @@ def compute_hits(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="HITS"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.DiGraph()
         G.add_edges_from(graph_edges)
@@ -85,7 +85,7 @@ def compute_out_degree_centrality(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="OutDegreeCentrality"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.DiGraph()
         G.add_edges_from(graph_edges)
@@ -105,7 +105,7 @@ def compute_in_degree_centrality(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="InDegreeCentrality"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.DiGraph()
         G.add_edges_from(graph_edges)
@@ -126,7 +126,7 @@ def compute_degree_centrality(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="Degree Centrality"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -150,7 +150,7 @@ def compute_structural_holes_metrics(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="Structural Holes"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -195,7 +195,7 @@ def compute_generalized_degree(edge_ranges, node_ranges, edge_index, distance=1)
     for index in tqdm(range(len(edge_ranges) - 1), desc="Generalized Degree"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -223,7 +223,7 @@ def compute_square_clustering(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="Square Clustering"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -246,7 +246,7 @@ def compute_clustering_coefficient(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="Clustering Coeff"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.Graph()
         G.add_edges_from(graph_edges)
@@ -261,6 +261,7 @@ def compute_clustering_coefficient(edge_ranges, node_ranges, edge_index):
     clustering_features = tf.convert_to_tensor(clustering_features, dtype=tf.float32)
     return tf.reshape(clustering_features, [-1, 1])
 
+
 def compute_pagerank(edge_ranges, node_ranges, edge_index):
     """Compute PageRank for each node."""
     pagerank_features = []
@@ -268,7 +269,7 @@ def compute_pagerank(edge_ranges, node_ranges, edge_index):
     for index in tqdm(range(len(edge_ranges) - 1), desc="PageRank"):
         edge_start = edge_ranges[index]
         edge_end = edge_ranges[index + 1]
-        graph_edges = edge_index[edge_start:edge_end].numpy()
+        graph_edges = edge_index[edge_start:edge_end]
 
         G = nx.DiGraph()
         G.add_edges_from(graph_edges)
@@ -284,9 +285,8 @@ def compute_pagerank(edge_ranges, node_ranges, edge_index):
     return tf.reshape(pagerank_features, [-1, 1])
 
 
-def compute_node_degree_oddness(edge_index, node_feat):
+def compute_node_degree_oddness(edge_index, num_nodes):
     all_edges = tf.reshape(edge_index, [-1])
-    num_nodes = tf.shape(node_feat)[0]
 
     # Initialize degree tensor with zeros for all nodes (representing evenness)
     degree = tf.zeros([num_nodes], dtype=tf.int32)

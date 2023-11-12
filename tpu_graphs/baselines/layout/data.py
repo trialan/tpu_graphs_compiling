@@ -405,11 +405,58 @@ class NpzDatasetPartition:
         npz_data = dict(npz_file.items())
         num_configs = npz_data["node_config_feat"].shape[0]
         num_config_nodes = npz_data["node_config_feat"].shape[1]
+        num_nodes = npz_data["node_feat"].shape[0]
+        num_edges = npz_data["edge_index"].shape[0]
+        node_ranges = np.array([0, num_nodes])  # Assuming one graph per file
+        edge_ranges = np.array([0, num_edges])  # Assuming one graph per file
+
+        edge_index = npz_data['edge_index']
+
+        avg_neigh_degree = compute_average_neighbor_degree(
+                edge_ranges, node_ranges, edge_index)
+
+        outdegree_centrality = compute_out_degree_centrality(
+                edge_ranges, node_ranges, edge_index)
+
+        indegree_centrality = compute_in_degree_centrality(
+                edge_ranges, node_ranges, edge_index)
+
+        degree_centrality = compute_degree_centrality(
+                edge_ranges, node_ranges, edge_index)
+
+        clustering_coeff = compute_clustering_coefficient(
+                edge_ranges, node_ranges, edge_index)
+
+        gen_degree = compute_generalized_degree(
+                edge_ranges, node_ranges, edge_index)
+
+        hubs, authorities = compute_hits(
+                edge_ranges, node_ranges, edge_index)
+
+        pagerank_features = compute_pagerank(
+                edge_ranges, node_ranges, edge_index)
+
+        evenness_feature = compute_node_degree_oddness(
+                edge_index, num_nodes)
+
+        import pdb;pdb.set_trace() 
+        npz_data['node_feat'] = tf.concat([
+            npz_data['node_feat'],
+            avg_neigh_degree,
+            outdegree_centrality,
+            indegree_centrality,
+            degree_centrality,
+            clustering_coeff,
+            gen_degree,
+            hubs,
+            authorities,
+            pagerank_features,
+            evenness_feature,
+            ], axis=-1)
 
 
-        N_CONFIF_FEATS = 18
-        #print(f"\n N CONFIG FEATS: {N_CONFIF_FEATS} \n")
-        #assert npz_data["node_config_feat"].shape[2] == N_CONFIF_FEATS  # used to be 18 pre-cleaning
+
+        import pdb;pdb.set_trace() 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
         if num_configs < min_configs:
@@ -479,59 +526,6 @@ class NpzDatasetPartition:
         self._compute_flat_config_ranges()
         #self.add_features()
 
-    def add_features(self):
-        """Add additional features to the dataset."""
-        """
-        avg_neigh_degree = compute_average_neighbor_degree(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        outdegree_centrality = compute_out_degree_centrality(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        indegree_centrality = compute_in_degree_centrality(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        degree_centrality = compute_degree_centrality(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        clustering_coeff = compute_clustering_coefficient(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        gen_degree = compute_generalized_degree(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        hubs, authorities = compute_hits(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-
-        square_clustering = compute_square_clustering(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-        """
-
-        evenness_feature = compute_node_degree_oddness(
-                self.edge_index, self.node_feat)
-
-        pagerank_features = compute_pagerank(
-                self.edge_ranges, self.node_ranges, self.edge_index)
-
-        # Concatenate all features with node_feat
-        self.node_feat = tf.concat([
-            self.node_feat,
-            evenness_feature,
-            pagerank_features,
-            ], axis=1)
-    #            square_clustering,
-    """
-
-            avg_neigh_degree,
-            outdegree_centrality,
-            indegree_centrality,
-            degree_centrality,
-            clustering_coeff,
-            gen_degree,
-            hubs,
-            authorities,
-    """
 
     def _compute_flat_config_ranges(self):
         num_configs = tf.cast(  # undo cumsum.
