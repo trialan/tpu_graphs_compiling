@@ -99,6 +99,22 @@ def train(args: train_args.TrainArgs):
       max_train_configs=args.max_configs)
       #cache_dir=os.path.expanduser(_CACHE_DIR.value)) DONT CACHE FOR
       #DATA PROCESSING EXPERIMENTS
+
+  print("\n norming runtimes \n")
+
+  min_runtime = 22298941
+  max_runtime = 535953371
+
+  def norm(x):
+      return (x - min_runtime) / (max_runtime - min_runtime)
+
+
+  import pdb;pdb.set_trace() 
+  dataset_partitions.train.config_runtime = norm(dataset_partitions.train.config_runtime)
+  dataset_partitions.validation.config_runtime = norm(dataset_partitions.train.config_runtime)
+  dataset_partitions.test.config_runtime = norm(dataset_partitions.train.config_runtime)
+
+
   batch_size = args.batch_size
 
   train_ds = (
