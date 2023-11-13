@@ -542,7 +542,6 @@ class NpzDataset(NamedTuple):
         mean, variance = tf.nn.moments(tensor, axes=[0])
         columns_to_keep = variance >= threshold
         masked_tensor = tf.boolean_mask(tensor, columns_to_keep, axis=1)
-
         train_mean, train_variance = tf.nn.moments(masked_tensor, axes=[0])
         return columns_to_keep, train_mean, train_variance
 
