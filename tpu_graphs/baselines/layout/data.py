@@ -13,6 +13,7 @@ import tensorflow_gnn as tfgnn
 import tqdm
 
 from tpu_graphs.baselines.layout.features import (
+        compute_pagerank,
         compute_node_degree_oddness,
         compute_clustering_coefficient,
         compute_square_clustering, #a bit slow
