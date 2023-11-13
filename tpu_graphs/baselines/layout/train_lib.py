@@ -113,6 +113,7 @@ def train(args: train_args.TrainArgs):
   from eda import analyse
   #analyse(train_ds)
 
+  import pdb;pdb.set_trace() 
   print(f"\n train_ds: {train_ds.element_spec[0].node_sets_spec['op']['feats'].shape[1]}")
   model = models.ResModel(num_configs, dataset_partitions.num_ops)
 
