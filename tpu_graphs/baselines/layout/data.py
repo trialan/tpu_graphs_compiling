@@ -482,7 +482,7 @@ class NpzDatasetPartition:
         min_runtime = 22298941
         max_runtime = 535953371
         scaled_runtimes = (raw_runtimes - min_runtime) / (max_runtime - min_runtime)
-        npz_data['config_runtime'] = scaled_runtimes
+        #npz_data['config_runtime'] = scaled_runtimes
 
         assert num_config_nodes == npz_data["node_config_ids"].shape[0]
         assert num_nodes == npz_data["node_opcode"].shape[0]
