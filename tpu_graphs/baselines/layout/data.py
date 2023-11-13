@@ -660,24 +660,24 @@ class NpzDataset(NamedTuple):
         """
 
         mask = self._OLD_get_normalizer(self.train.node_feat)
-        self.train.node_feat = _OLD_apply_normalizer(
+        self.train.node_feat = self._OLD_apply_normalizer(
             self.train.node_feat, *mask
         )
-        self.validation.node_feat = _OLD_apply_normalizer(
+        self.validation.node_feat = self._OLD_apply_normalizer(
             self.validation.node_feat, *mask
         )
-        self.test.node_feat = _OLD_apply_normalizer(
+        self.test.node_feat = self._OLD_apply_normalizer(
             self.test.node_feat, *mask
         )
 
         mask = self._get_normalizer(self.train.node_config_feat)
-        self.train.node_config_feat = _OLD_apply_normalizer(
+        self.train.node_config_feat = self._OLD_apply_normalizer(
             self.train.node_config_feat, *mask
         )
-        self.validation.node_config_feat = _OLD_apply_normalizer(
+        self.validation.node_config_feat = self._OLD_apply_normalizer(
             self.validation.node_config_feat, *mask
         )
-        self.test.node_config_feat = _OLD_apply_normalizer(
+        self.test.node_config_feat = self._OLD_apply_normalizer(
             self.test.node_config_feat, *mask
         )
 
