@@ -33,53 +33,9 @@ _TOY_DATA = flags.DEFINE_bool(
     "{train, test, validation} partitions.",
 )
 
-class FeatureMatrixDB:
-    def __init__(self, ds_partition, max_configs):
-        """ A table of graph-compiler config vectors and runtimes """
-        feature_matrix, runtimes = self._extract_db_data(ds_partition,
-                                                         max_configs)
-        self.feature_matrix = feature_matrix
-        self.runtimes = runtimes
-
-    def find_most_aligned_runtime(self, input_vector):
-        input_vector = np.array(input_vector)
-        dot_products = self.feature_matrix.dot(input_vector)
-
-        indices = np.where(np.all(self.feature_matrix == input_vector, axis=1))[0]
-        for index in indices:
-            dot_products[index] = -np.inf
-
-        most_aligned_index = np.argmax(dot_products)
-        return self.runtimes[most_aligned_index]
-
-    def _extract_db_data(self, db_partition, max_configs):
-        node_feats = db_partition.node_feat.numpy()
-        node_config_ids = db_partition.node_config_ids.numpy()
-        node_config_feats = db_partition.node_config_feat.numpy()
-        config_runtimes = db_partition.config_runtime.numpy()
-
-        combined_features = []
-        runtime_list = []
-
-        # Number of configurable nodes
-        num_config_nodes = len(node_config_ids)
-
-        for config_index in tqdm.tqdm(range(max_configs - 1), desc="populating DB"):
-            # For each configuration, iterate through each configurable node
-            for node_index, node_id in enumerate(node_config_ids):
-                node_feat = node_feats[node_id]
-
-                config_feat_index = config_index * num_config_nodes + node_index
-                config_feat = node_config_feats[config_feat_index]
-
-                combined_feat = np.concatenate([node_feat, config_feat])
-                combined_features.append(combined_feat)
-                runtime_list.append(config_runtimes[config_index])
-
-        combined_feature_matrix = np.array(combined_features)
-        runtime_array = np.array(runtime_list)
-
-        return combined_feature_matrix, runtime_array
+def print_nans(x):
+    x = tf.math.is_nan(x)
+    print(f"NaNs: {tf.reduce_sum(tf.cast(x, tf.int32)).numpy()}")
 
 
 class LayoutExample(NamedTuple):
@@ -104,41 +60,6 @@ class LayoutExample(NamedTuple):
     def to_graph_tensor(
         self, config_samples: int = -1, max_nodes: int = -1
         ) -> tfgnn.GraphTensor:
-        """Returns `GraphTensor` (sampled if `max(max_nodes, config_samples) >= 0`).
-
-        Args:
-          config_samples: if -1, then all module configurations (and their runtimes)
-            are returned. If >=0, then this many module configurations (and their
-            corresponding runtimes) are sampled uniformly at random.
-          max_nodes: Number of nodes to keep in `"sampled_feed"` and
-            `"sampled_config"` edge sets. Regardless, edges for all nodes will be
-            present in `"feed"` and `"config"`. If `< 0`, then `"sampled_config"`
-            and `"config"` will be identical, also `"sampled_feed"` and `"feed"`.
-
-        Returns:
-          GraphTensor with node-sets:
-            + `"op"` with features=(
-                'op': int-vector, 'feats': float-matrix,
-                'selected': bool-vector indicating if node has edges in
-                            `"sampled_*"` edge-sets).
-            + `"nconfigs"` (
-                feats='feats': float-tensor with shape
-                  `[num_configurable_nodes, num_configs, config_feat_dim]`).
-            + `"g"` (stands for "graph") has one (root) node connecting to all
-              `"op"` and `"nconfigs"`.
-              features=('graph_id': filename of graph (without .npz extension),
-                        'runtimes': vector of targets with shape `[num_configs]`)
-          and edge-sets:
-            + 'feed': directed edges connecting op-node to op-node.
-            + 'config': edges connecting each `"nconfig"` node with a different
-              `"op"` node.
-            + 'sampled_feed' and 'sampled_config': contain a subset of edges of the
-              above two. Specifically, ones incident on sampled `op` nodes, for
-              which feature `selected` is set.
-            + 'g_op': edges connecting the singleton `"g"` node to every `"op"` node
-            + 'g_config': edges connecting the singleton `"g"` node to every
-              `"nconfig"` node.
-        """
         config_features = self.node_config_features
         config_runtimes = self.config_runtimes
         num_config_nodes = tf.shape(config_features)[1]
@@ -616,29 +537,43 @@ class NpzDataset(NamedTuple):
             + 1
         )
 
-    def _get_normalizer(self, feature_matrix) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
-        max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
-        min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
-        return min_feat[0] != max_feat[0]
+    def _get_normalizer(self, tensor):
+        threshold = 1e-10
+        mean, variance = tf.nn.moments(tensor, axes=[0])
+        columns_to_keep = variance >= threshold
+        masked_tensor = tf.boolean_mask(tensor, columns_to_keep, axis=1)
 
+        train_mean, train_variance = tf.nn.moments(masked_tensor, axes=[0])
+        return columns_to_keep, train_mean, train_variance
 
-    def _apply_normalizer(self, feature_matrix, used_columns):
+    def _apply_normalizer(self, feature_matrix, used_columns, mean, variance):
         feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
-        mean, variance = tf.nn.moments(feature_matrix, axes=[0])
         feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
+        print_nans(feature_matrix_standardized)
         return feature_matrix_standardized
 
-        """
-        # Decorrelation using PCA (Principal Component Analysis)
-        # Compute the Singular Value Decomposition (SVD) of the covariance matrix
-        covariance_matrix = tf.tensordot(tf.transpose(feature_matrix_standardized), feature_matrix_standardized, axes=[[1], [0]])
-        S, U, V = tf.linalg.svd(covariance_matrix)
-        S_reg = S + 1e-10
-        # Whitening: Multiply by the inverse square root of eigenvalues (S)
-        feature_matrix_whitened = tf.tensordot(feature_matrix_standardized, U / tf.sqrt(S_reg), axes=[[1], [0]])
+    def normalize(self, max_configs):
+        mask = self._get_normalizer(self.train.node_feat)
+        self.train.node_feat = self._apply_normalizer(
+            self.train.node_feat, *mask
+        )
+        self.validation.node_feat = self._apply_normalizer(
+            self.validation.node_feat, *mask
+        )
+        self.test.node_feat = self._apply_normalizer(
+            self.test.node_feat, *mask
+        )
 
-        return feature_matrix_whitened
-        """
+        mask = self._get_normalizer(self.train.node_config_feat)
+        self.train.node_config_feat = self._apply_normalizer(
+            self.train.node_config_feat, *mask
+        )
+        self.validation.node_config_feat = self._apply_normalizer(
+            self.validation.node_config_feat, *mask
+        )
+        self.test.node_config_feat = self._apply_normalizer(
+            self.test.node_config_feat, *mask
+        )
 
     def _OLD_get_normalizer(self, feature_matrix):
         max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
@@ -651,29 +586,6 @@ class NpzDataset(NamedTuple):
         max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
         return (feature_matrix - min_feat) / (max_feat - min_feat)
 
-    def normalize(self, max_configs):
-        mask = self._get_normalizer(self.train.node_feat)
-        self.train.node_feat = self._apply_normalizer(
-            self.train.node_feat, mask
-        )
-        self.validation.node_feat = self._apply_normalizer(
-            self.validation.node_feat, mask
-        )
-        self.test.node_feat = self._apply_normalizer(
-            self.test.node_feat, mask
-        )
-
-        mask = self._get_normalizer(self.train.node_config_feat)
-        self.train.node_config_feat = self._apply_normalizer(
-            self.train.node_config_feat, mask
-        )
-        self.validation.node_config_feat = self._apply_normalizer(
-            self.validation.node_config_feat, mask
-        )
-        self.test.node_config_feat = self._apply_normalizer(
-            self.test.node_config_feat, mask
-        )
-
 
 
 def get_npz_split(
@@ -681,8 +593,8 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
-    #files = tf.io.gfile.glob(glob_pattern)
+    #files = sorted(tf.io.gfile.glob(glob_pattern))
+    files = tf.io.gfile.glob(glob_pattern)
 
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
