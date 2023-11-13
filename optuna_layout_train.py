@@ -19,7 +19,7 @@ def objective(trial):
 
 def main(unused_argv: Sequence[str]) -> None:
     study = optuna.create_study(direction='maximize')  # Adjust direction based on your metric
-    study.optimize(objective, n_trials=50)  # Adjust the number of trials
+    study.optimize(objective, n_trials=2)  # Adjust the number of trials
 
     print("Best parameters: ", study.best_params)
     print("Best value: ", study.best_value)
