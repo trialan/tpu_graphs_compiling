@@ -5,6 +5,7 @@ import io
 import os
 from typing import NamedTuple
 
+import matplotlib.pyplot as plt
 from absl import flags
 import numpy as np
 import tensorflow as tf
@@ -618,21 +619,28 @@ class NpzDataset(NamedTuple):
     def _get_normalizer(self, feature_matrix) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
         min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
-        return min_feat[0] != max_feat[0], min_feat, max_feat
+        return min_feat[0] != max_feat[0]#, min_feat, max_feat
 
-    def _apply_normalizer(self, feature_matrix, used_columns, min_feat, max_feat):
+
+    def _apply_normalizer(self, feature_matrix, used_columns):
         feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
-        min_feat = tf.boolean_mask(min_feat, used_columns, axis=1)
-        max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
-        return (feature_matrix - min_feat) / (max_feat - min_feat)
+        # Standardize: Subtract mean and divide by standard deviation
+        mean, variance = tf.nn.moments(feature_matrix, axes=[0])
+        feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
+        return feature_matrix_standardized
 
-    def _get_runtime_normalizer(self, runtimes) -> tuple[tf.Tensor, tf.Tensor]:
-        max_runtime = tf.reduce_max(runtimes)
-        min_runtime = tf.reduce_min(runtimes)
-        return min_runtime, max_runtime
+        """
+        # Decorrelation using PCA (Principal Component Analysis)
+        # Compute the Singular Value Decomposition (SVD) of the covariance matrix
+        covariance_matrix = tf.tensordot(tf.transpose(feature_matrix_standardized), feature_matrix_standardized, axes=[[1], [0]])
+        S, U, V = tf.linalg.svd(covariance_matrix)
+        S_reg = S + 1e-10
+        # Whitening: Multiply by the inverse square root of eigenvalues (S)
+        feature_matrix_whitened = tf.tensordot(feature_matrix_standardized, U / tf.sqrt(S_reg), axes=[[1], [0]])
 
-    def _apply_runtime_normalizer(self, runtimes, min_runtime, max_runtime):
-        return (runtimes - min_runtime) / (max_runtime - min_runtime)
+        return feature_matrix_whitened
+        """
+
 
     def normalize(self, max_configs):
         """Removes constant features and normalizes remaining onto [0, 1].
@@ -641,30 +649,47 @@ class NpzDataset(NamedTuple):
         partitions {train, test, validation}.
         """
 
-        normalizer_args = self._get_normalizer(self.train.node_feat)
+        mask = self._get_normalizer(self.train.node_feat)
         self.train.node_feat = self._apply_normalizer(
-            self.train.node_feat, *normalizer_args
+            self.train.node_feat, mask
         )
         self.validation.node_feat = self._apply_normalizer(
-            self.validation.node_feat, *normalizer_args
+            self.validation.node_feat, mask
         )
         self.test.node_feat = self._apply_normalizer(
-            self.test.node_feat, *normalizer_args
+            self.test.node_feat, mask
         )
 
-        normalizer_args = self._get_normalizer(self.train.node_config_feat)
+        mask = self._get_normalizer(self.train.node_config_feat)
         self.train.node_config_feat = self._apply_normalizer(
-            self.train.node_config_feat, *normalizer_args
+            self.train.node_config_feat, mask
         )
         self.validation.node_config_feat = self._apply_normalizer(
-            self.validation.node_config_feat, *normalizer_args
+            self.validation.node_config_feat, mask
         )
         self.test.node_config_feat = self._apply_normalizer(
-            self.test.node_config_feat, *normalizer_args
+            self.test.node_config_feat, mask
         )
 
         db = FeatureMatrixDB(self.train, max_configs)
         return db
+
+
+def plot_feature_variances(tensor):
+    # Calculate variances along the first dimension (for each feature)
+    variances = tf.math.reduce_variance(tf.cast(tensor, tf.float32), axis=0)
+
+    # Convert variances to numpy for plotting (if necessary)
+    variances = variances.numpy()
+
+    # Create a plot
+    plt.figure(figsize=(12, 6))
+    plt.plot(variances)
+    plt.title('Feature Variances')
+    plt.xlabel('Feature Index')
+    plt.ylabel('Variance')
+    plt.grid(True)
+    plt.show()
 
 
 def append_aligned_runtimes_to_features(ds_partition, feature_db, mean_train_runtime):

@@ -97,6 +97,7 @@ def train(args: train_args.TrainArgs):
       data_root_dir, min_train_configs=num_configs,
       max_train_configs=args.max_configs)
 
+  """
   mean_train_runtime = np.mean(dataset_partitions.train.config_runtime)
 
   for partition in [dataset_partitions.train,
@@ -104,6 +105,7 @@ def train(args: train_args.TrainArgs):
                     dataset_partitions.test]:
     data.append_aligned_runtimes_to_features(partition, db,
                                         mean_train_runtime)
+  """
 
   batch_size = args.batch_size
 
