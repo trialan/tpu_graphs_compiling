@@ -14,12 +14,12 @@ def objective(trial):
     updated_args = args._replace(learning_rate=learning_rate, clip_norm=clip_norm)
 
     # Run training with updated arguments
-    result = train_lib.train(updated_args)
-    return result  # Replace with appropriate metric from the result
+    val_opa = train_lib.train(updated_args)
+    return val_opa
 
 def main(unused_argv: Sequence[str]) -> None:
     study = optuna.create_study(direction='maximize')  # Adjust direction based on your metric
-    study.optimize(objective, n_trials=2)  # Adjust the number of trials
+    study.optimize(objective, n_trials=60)
 
     print("Best parameters: ", study.best_params)
     print("Best value: ", study.best_value)
