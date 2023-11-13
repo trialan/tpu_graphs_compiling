@@ -682,8 +682,8 @@ class NpzDataset(NamedTuple):
             self.test.node_config_feat, *mask
         )
 
-        db = FeatureMatrixDB(self.train, max_configs)
-        return db
+        #db = FeatureMatrixDB(self.train, max_configs)
+        #return db
 
 
 def plot_feature_variances(tensor):
@@ -769,6 +769,6 @@ def get_npz_dataset(
         ),
         test=get_npz_split(os.path.join(root_path, "test"), cache_dir=cache_dir),
     )
-    db = npz_dataset.normalize(max_train_configs)
-    return npz_dataset, db
+    npz_dataset.normalize(max_train_configs)
+    return npz_dataset
 
