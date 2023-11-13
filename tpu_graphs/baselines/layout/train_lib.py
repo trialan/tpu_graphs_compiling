@@ -94,10 +94,19 @@ def train(args: train_args.TrainArgs):
   data_root_dir = os.path.join(
       os.path.expanduser(_DATA_ROOT.value), args.source, args.search)
   num_configs = args.configs
-  dataset_partitions = data.get_npz_dataset(
+  dataset_partitions, db = data.get_npz_dataset(
       data_root_dir, min_train_configs=num_configs,
       max_train_configs=args.max_configs)
 
+  """
+  mean_train_runtime = np.mean(dataset_partitions.train.config_runtime)
+
+  for partition in [dataset_partitions.train,
+                    dataset_partitions.validation,
+                    dataset_partitions.test]:
+    data.append_aligned_runtimes_to_features(partition, db,
+                                        mean_train_runtime)
+  """
 
   batch_size = args.batch_size
 
@@ -162,8 +171,7 @@ def train(args: train_args.TrainArgs):
                    i, best_val_at_epoch)
       break
 
-  return val_opa
-  """
+  #return val_opa
   #REMOVE TEST SET INFERENCE FOR OPTUNA TUNING
   # Restore best parameters.
   assert best_params is not None
@@ -214,4 +222,3 @@ def train(args: train_args.TrainArgs):
     for graph_id, ranks in test_rankings:
       fout.write(f'layout:{args.source}:{args.search}:{graph_id},{ranks}\n')
   print('\n\n   ***  Wrote', args.results_csv, '\n\n')
-  """

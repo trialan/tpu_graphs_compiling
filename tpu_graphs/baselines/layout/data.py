@@ -663,19 +663,8 @@ class NpzDataset(NamedTuple):
             self.test.node_config_feat, *normalizer_args
         )
 
-        """
-        mean_train_runtime = np.mean(self.train.config_runtime)
-
         db = FeatureMatrixDB(self.train, max_configs)
-
-        for partition in [self.train, self.validation, self.test]:
-            append_aligned_runtimes_to_features(partition, db,
-                                                mean_train_runtime)
-
-
-        """
-        #NORMALIZE THE RUNTIMES TO [0-1]
-
+        return db
 
 
 def append_aligned_runtimes_to_features(ds_partition, feature_db, mean_train_runtime):
@@ -705,7 +694,7 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    files = sorted(tf.io.gfile.glob(glob_pattern))
+    files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
 
     #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
@@ -743,6 +732,6 @@ def get_npz_dataset(
         ),
         test=get_npz_split(os.path.join(root_path, "test"), cache_dir=cache_dir),
     )
-    npz_dataset.normalize(max_train_configs)
-    return npz_dataset
+    db = npz_dataset.normalize(max_train_configs)
+    return npz_dataset, db
 
