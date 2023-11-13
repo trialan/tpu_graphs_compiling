@@ -516,6 +516,7 @@ class NpzDatasetPartition:
 
 
 def compute_pca_components(tensor):
+    print("Computing tensor PCA")
     covariance_matrix = tf.matmul(tensor, tensor, transpose_a=True) / tf.cast(tf.shape(tensor)[0], tf.float32)
     S, U, V = tf.linalg.svd(covariance_matrix, compute_uv=True)
     eigenvector_matrix = U
