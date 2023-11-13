@@ -676,7 +676,6 @@ class NpzDataset(NamedTuple):
 
         """
         #NORMALIZE THE RUNTIMES TO [0-1]
-        """
         print("\n Normalizing the runtimes \n")
         min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
 
@@ -689,7 +688,6 @@ class NpzDataset(NamedTuple):
         self.test.config_runtime = self._apply_runtime_normalizer(
             self.test.config_runtime, min_runtime, max_runtime
         )
-        """
 
 
 
