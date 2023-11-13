@@ -641,12 +641,12 @@ class NpzDataset(NamedTuple):
         return feature_matrix_whitened
         """
 
-      def _OLD_get_normalizer(self, feature_matrix) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
+    def _OLD_get_normalizer(self, feature_matrix):
         max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
         min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
         return min_feat[0] != max_feat[0], min_feat, max_feat
 
-      def _OLD_apply_normalizer(self, feature_matrix, used_columns, min_feat, max_feat):
+    def _OLD_apply_normalizer(self, feature_matrix, used_columns, min_feat, max_feat):
         feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
         min_feat = tf.boolean_mask(min_feat, used_columns, axis=1)
         max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
