@@ -641,6 +641,17 @@ class NpzDataset(NamedTuple):
         return feature_matrix_whitened
         """
 
+      def _OLD_get_normalizer(self, feature_matrix) -> tuple[
+          tf.Tensor, tf.Tensor, tf.Tensor]:
+        max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
+        min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
+        return min_feat[0] != max_feat[0], min_feat, max_feat
+
+      def _OLD_apply_normalizer(self, feature_matrix, used_columns, min_feat, max_feat):
+        feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
+        min_feat = tf.boolean_mask(min_feat, used_columns, axis=1)
+        max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
+        return (feature_matrix - min_feat) / (max_feat - min_feat)
 
     def normalize(self, max_configs):
         """Removes constant features and normalizes remaining onto [0, 1].
@@ -649,26 +660,26 @@ class NpzDataset(NamedTuple):
         partitions {train, test, validation}.
         """
 
-        mask = self._get_normalizer(self.train.node_feat)
-        self.train.node_feat = self._apply_normalizer(
-            self.train.node_feat, mask
+        mask = self._OLD_get_normalizer(self.train.node_feat)
+        self.train.node_feat = _OLD_apply_normalizer(
+            self.train.node_feat, *mask
         )
-        self.validation.node_feat = self._apply_normalizer(
-            self.validation.node_feat, mask
+        self.validation.node_feat = _OLD_apply_normalizer(
+            self.validation.node_feat, *mask
         )
-        self.test.node_feat = self._apply_normalizer(
-            self.test.node_feat, mask
+        self.test.node_feat = _OLD_apply_normalizer(
+            self.test.node_feat, *mask
         )
 
         mask = self._get_normalizer(self.train.node_config_feat)
-        self.train.node_config_feat = self._apply_normalizer(
-            self.train.node_config_feat, mask
+        self.train.node_config_feat = _OLD_apply_normalizer(
+            self.train.node_config_feat, *mask
         )
-        self.validation.node_config_feat = self._apply_normalizer(
-            self.validation.node_config_feat, mask
+        self.validation.node_config_feat = _OLD_apply_normalizer(
+            self.validation.node_config_feat, *mask
         )
-        self.test.node_config_feat = self._apply_normalizer(
-            self.test.node_config_feat, mask
+        self.test.node_config_feat = _OLD_apply_normalizer(
+            self.test.node_config_feat, *mask
         )
 
         db = FeatureMatrixDB(self.train, max_configs)
