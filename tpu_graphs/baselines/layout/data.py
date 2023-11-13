@@ -13,7 +13,6 @@ import tensorflow_gnn as tfgnn
 import tqdm
 
 from tpu_graphs.baselines.layout.features import (
-        compute_pagerank,
         compute_node_degree_oddness,
         compute_clustering_coefficient,
         compute_square_clustering, #a bit slow
@@ -541,6 +540,8 @@ class NpzDataset(NamedTuple):
         threshold = 1e-10
         mean, variance = tf.nn.moments(tensor, axes=[0])
         columns_to_keep = variance >= threshold
+        print(f"Keeping {sum(columns_to_keep.numpy())} columns")
+        import pdb;pdb.set_trace() 
         masked_tensor = tf.boolean_mask(tensor, columns_to_keep, axis=1)
         train_mean, train_variance = tf.nn.moments(masked_tensor, axes=[0])
         return columns_to_keep, train_mean, train_variance
