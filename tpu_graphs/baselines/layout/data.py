@@ -619,12 +619,11 @@ class NpzDataset(NamedTuple):
     def _get_normalizer(self, feature_matrix) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
         min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
-        return min_feat[0] != max_feat[0]#, min_feat, max_feat
+        return min_feat[0] != max_feat[0]
 
 
     def _apply_normalizer(self, feature_matrix, used_columns):
         feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
-        # Standardize: Subtract mean and divide by standard deviation
         mean, variance = tf.nn.moments(feature_matrix, axes=[0])
         feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
         return feature_matrix_standardized
@@ -653,75 +652,28 @@ class NpzDataset(NamedTuple):
         return (feature_matrix - min_feat) / (max_feat - min_feat)
 
     def normalize(self, max_configs):
-        """Removes constant features and normalizes remaining onto [0, 1].
-
-        The statistics are computed only from train partition then applied to all
-        partitions {train, test, validation}.
-        """
-
-        mask = self._OLD_get_normalizer(self.train.node_feat)
-        self.train.node_feat = self._OLD_apply_normalizer(
-            self.train.node_feat, *mask
+        mask = self._get_normalizer(self.train.node_feat)
+        self.train.node_feat = self._apply_normalizer(
+            self.train.node_feat, mask
         )
-        self.validation.node_feat = self._OLD_apply_normalizer(
-            self.validation.node_feat, *mask
+        self.validation.node_feat = self._apply_normalizer(
+            self.validation.node_feat, mask
         )
-        self.test.node_feat = self._OLD_apply_normalizer(
-            self.test.node_feat, *mask
+        self.test.node_feat = self._apply_normalizer(
+            self.test.node_feat, mask
         )
 
-        mask = self._OLD_get_normalizer(self.train.node_config_feat)
-        self.train.node_config_feat = self._OLD_apply_normalizer(
-            self.train.node_config_feat, *mask
+        mask = self._get_normalizer(self.train.node_config_feat)
+        self.train.node_config_feat = self._apply_normalizer(
+            self.train.node_config_feat, mask
         )
-        self.validation.node_config_feat = self._OLD_apply_normalizer(
-            self.validation.node_config_feat, *mask
+        self.validation.node_config_feat = self._apply_normalizer(
+            self.validation.node_config_feat, mask
         )
-        self.test.node_config_feat = self._OLD_apply_normalizer(
-            self.test.node_config_feat, *mask
+        self.test.node_config_feat = self._apply_normalizer(
+            self.test.node_config_feat, mask
         )
 
-        #db = FeatureMatrixDB(self.train, max_configs)
-        #return db
-
-
-def plot_feature_variances(tensor):
-    # Calculate variances along the first dimension (for each feature)
-    variances = tf.math.reduce_variance(tf.cast(tensor, tf.float32), axis=0)
-
-    # Convert variances to numpy for plotting (if necessary)
-    variances = variances.numpy()
-
-    # Create a plot
-    plt.figure(figsize=(12, 6))
-    plt.plot(variances)
-    plt.title('Feature Variances')
-    plt.xlabel('Feature Index')
-    plt.ylabel('Variance')
-    plt.grid(True)
-    plt.show()
-
-
-def append_aligned_runtimes_to_features(ds_partition, feature_db, mean_train_runtime):
-    extended_node_feats = []
-
-    for i in tqdm.tqdm(range(ds_partition.node_feat.shape[0]), desc="VectorSpaceTrick"):
-        node_features = ds_partition.node_feat[i].numpy()
-
-        # Check if the node is configurable and has config features
-        if i in ds_partition.node_config_ids.numpy():
-            config_index = np.where(ds_partition.node_config_ids.numpy() == i)[0][0]
-            config_features = ds_partition.node_config_feat[config_index].numpy()
-            combined_features = np.concatenate([node_features, config_features])
-
-            most_aligned_runtime = feature_db.find_most_aligned_runtime(combined_features)
-        else:
-            most_aligned_runtime = mean_train_runtime
-
-        extended_features = np.append(node_features, most_aligned_runtime)
-        extended_node_feats.append(extended_features)
-
-    ds_partition.node_feat = tf.convert_to_tensor(extended_node_feats, dtype=tf.float32)
 
 
 def get_npz_split(
@@ -729,10 +681,9 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    #files = sorted(tf.io.gfile.glob(glob_pattern))
-    files = tf.io.gfile.glob(glob_pattern)
+    files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
+    #files = tf.io.gfile.glob(glob_pattern)
 
-    #print("ONLY USING SOME FILES FOR EXP!!!!")
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
 
