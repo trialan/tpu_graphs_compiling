@@ -477,6 +477,13 @@ class NpzDatasetPartition:
         self._data_dict["graph_id"].append(np.array(graph_id))
         num_nodes = npz_data["node_feat"].shape[0]
         num_edges = npz_data["edge_index"].shape[0]
+
+        raw_runtimes = npz_data['config_runtime']
+        min_runtime = 22298941
+        max_runtime = 535953371
+        scaled_runtimes = (raw_runtimes - min_runtime) / (max_runtime - min_runtime)
+        npz_data['config_runtime'] = scaled_runtimes
+
         assert num_config_nodes == npz_data["node_config_ids"].shape[0]
         assert num_nodes == npz_data["node_opcode"].shape[0]
         assert num_configs == npz_data["config_runtime"].shape[0]
@@ -676,18 +683,6 @@ class NpzDataset(NamedTuple):
 
         """
         #NORMALIZE THE RUNTIMES TO [0-1]
-        print("\n Normalizing the runtimes \n")
-        min_runtime, max_runtime = self._get_runtime_normalizer(self.train.config_runtime)
-
-        self.train.config_runtime = self._apply_runtime_normalizer(
-            self.train.config_runtime, min_runtime, max_runtime
-        )
-        self.validation.config_runtime = self._apply_runtime_normalizer(
-            self.validation.config_runtime, min_runtime, max_runtime
-        )
-        self.test.config_runtime = self._apply_runtime_normalizer(
-            self.test.config_runtime, min_runtime, max_runtime
-        )
 
 
 
@@ -725,7 +720,7 @@ def get_npz_split(
         raise ValueError("No files matched: " + glob_pattern)
 
     npz_dataset = NpzDatasetPartition()
-    for filename in tqdm.tqdm(files, desc="adding npz files (+features)"):
+    for filename in tqdm.tqdm(files, desc="adding npz files (+features, runtime norm)"):
         np_data = np.load(tf.io.gfile.GFile(filename, "rb"))
         graph_id = os.path.splitext(os.path.basename(filename))[0]
         npz_dataset.add_npz_file(
