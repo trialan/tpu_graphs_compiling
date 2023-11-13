@@ -660,7 +660,7 @@ class NpzDataset(NamedTuple):
         """
 
         mask = self._get_normalizer(self.train.node_feat)
-        self.train.node_feat = self._OLD_apply_normalizer(
+        self.train.node_feat = self._apply_normalizer(
             self.train.node_feat, mask
         )
         self.validation.node_feat = self._apply_normalizer(
