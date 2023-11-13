@@ -515,6 +515,13 @@ class NpzDatasetPartition:
             yield self.get_item(i).to_graph_tensor()
 
 
+def compute_pca_components(tensor):
+    covariance_matrix = tf.matmul(tensor, tensor, transpose_a=True) / tf.cast(tf.shape(tensor)[0], tf.float32)
+    S, U, V = tf.linalg.svd(covariance_matrix, compute_uv=True)
+    eigenvector_matrix = U
+    return eigenvector_matrix
+
+
 class NpzDataset(NamedTuple):
     """Contains all partitions of the dataset."""
 
@@ -538,41 +545,42 @@ class NpzDataset(NamedTuple):
         )
 
     def _get_normalizer(self, tensor):
-        threshold = 1e-10
         mean, variance = tf.nn.moments(tensor, axes=[0])
         columns_to_keep = tf.reduce_max(tensor, axis=0) != tf.reduce_min(tensor, axis=0)
         print(f"Keeping {sum(columns_to_keep.numpy())} columns")
         masked_tensor = tf.boolean_mask(tensor, columns_to_keep, axis=1)
         train_mean, train_variance = tf.nn.moments(masked_tensor, axes=[0])
-        return columns_to_keep, train_mean, train_variance
+        eigenvector_matrix = compute_pca_components(masked_tensor)
+        return columns_to_keep, train_mean, train_variance, eigenvector_matrix
 
-    def _apply_normalizer(self, feature_matrix, used_columns, mean, variance):
+    def _apply_normalizer(self, feature_matrix, used_columns, mean, variance, eigenvector_matrix):
         feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
         feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
-        print_nans(feature_matrix_standardized)
-        return feature_matrix_standardized
+        decorrelated_feature_matrix = tf.matmul(feature_matrix_standardized, eigenvector_matrix)
+        print_nans(decorrelated_feature_matrix)
+        return decorrelated_feature_matrix
 
     def normalize(self, max_configs):
-        mask = self._get_normalizer(self.train.node_feat)
+        normalizer_args = self._get_normalizer(self.train.node_feat)
         self.train.node_feat = self._apply_normalizer(
-            self.train.node_feat, *mask
+            self.train.node_feat, *normalizer_args
         )
         self.validation.node_feat = self._apply_normalizer(
-            self.validation.node_feat, *mask
+            self.validation.node_feat, *normalizer_args
         )
         self.test.node_feat = self._apply_normalizer(
-            self.test.node_feat, *mask
+            self.test.node_feat, *normalizer_args
         )
 
-        mask = self._get_normalizer(self.train.node_config_feat)
+        normalizer_args = self._get_normalizer(self.train.node_config_feat)
         self.train.node_config_feat = self._apply_normalizer(
-            self.train.node_config_feat, *mask
+            self.train.node_config_feat, *normalizer_args
         )
         self.validation.node_config_feat = self._apply_normalizer(
-            self.validation.node_config_feat, *mask
+            self.validation.node_config_feat, *normalizer_args
         )
         self.test.node_config_feat = self._apply_normalizer(
-            self.test.node_config_feat, *mask
+            self.test.node_config_feat, *normalizer_args
         )
 
     def _OLD_get_normalizer(self, feature_matrix):
@@ -593,8 +601,8 @@ def get_npz_split(
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    #files = sorted(tf.io.gfile.glob(glob_pattern))
-    files = tf.io.gfile.glob(glob_pattern)
+    files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
+    #files = tf.io.gfile.glob(glob_pattern)
 
     if not files:
         raise ValueError("No files matched: " + glob_pattern)
