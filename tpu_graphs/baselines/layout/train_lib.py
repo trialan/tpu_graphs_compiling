@@ -162,6 +162,9 @@ def train(args: train_args.TrainArgs):
                    i, best_val_at_epoch)
       break
 
+  return val_opa
+  """
+  #REMOVE TEST SET INFERENCE FOR OPTUNA TUNING
   # Restore best parameters.
   assert best_params is not None
   for v in model.trainable_variables:
@@ -211,3 +214,4 @@ def train(args: train_args.TrainArgs):
     for graph_id, ranks in test_rankings:
       fout.write(f'layout:{args.source}:{args.search}:{graph_id},{ranks}\n')
   print('\n\n   ***  Wrote', args.results_csv, '\n\n')
+  """
