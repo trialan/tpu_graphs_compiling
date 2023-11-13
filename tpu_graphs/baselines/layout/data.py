@@ -81,7 +81,6 @@ class FeatureMatrixDB:
         return combined_feature_matrix, runtime_array
 
 
-
 class LayoutExample(NamedTuple):
     """Single example of layout graph."""
     total_nodes: tf.Tensor  # shape []
@@ -402,7 +401,6 @@ class NpzDatasetPartition:
 
         edge_index = npz_data['edge_index']
 
-        """
         avg_neigh_degree = compute_average_neighbor_degree(
                 edge_ranges, node_ranges, edge_index)
 
@@ -443,7 +441,6 @@ class NpzDatasetPartition:
             pagerank_features,
             evenness_feature,
             ], axis=-1)
-        """
 
         npz_data["node_splits"] = npz_data["node_splits"].reshape([-1])
         npz_data["argsort_config_runtime"] = np.argsort(npz_data["config_runtime"])
@@ -478,11 +475,6 @@ class NpzDatasetPartition:
         num_nodes = npz_data["node_feat"].shape[0]
         num_edges = npz_data["edge_index"].shape[0]
 
-        raw_runtimes = npz_data['config_runtime']
-        min_runtime = 22298941
-        max_runtime = 535953371
-        scaled_runtimes = (raw_runtimes - min_runtime) / (max_runtime - min_runtime)
-        #npz_data['config_runtime'] = scaled_runtimes
 
         assert num_config_nodes == npz_data["node_config_ids"].shape[0]
         assert num_nodes == npz_data["node_opcode"].shape[0]
