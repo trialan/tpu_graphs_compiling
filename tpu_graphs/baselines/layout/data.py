@@ -626,7 +626,7 @@ class NpzDataset(NamedTuple):
         feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
         # Standardize: Subtract mean and divide by standard deviation
         mean, variance = tf.nn.moments(feature_matrix, axes=[0])
-        feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
+        feature_matrix_standardized = 1.5* (feature_matrix - mean) / tf.sqrt(variance)
         return feature_matrix_standardized
 
         """
