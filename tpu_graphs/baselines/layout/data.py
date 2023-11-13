@@ -641,8 +641,7 @@ class NpzDataset(NamedTuple):
         return feature_matrix_whitened
         """
 
-      def _OLD_get_normalizer(self, feature_matrix) -> tuple[
-          tf.Tensor, tf.Tensor, tf.Tensor]:
+      def _OLD_get_normalizer(self, feature_matrix) -> tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
         min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
         return min_feat[0] != max_feat[0], min_feat, max_feat
