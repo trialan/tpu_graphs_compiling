@@ -1,16 +1,19 @@
 import collections
+import warnings
 import functools
 import hashlib
+import pickle
 import io
 import os
 from typing import NamedTuple
 
-import matplotlib.pyplot as plt
 from absl import flags
 import numpy as np
 import tensorflow as tf
 import tensorflow_gnn as tfgnn
 import tqdm
+from scipy.stats import yeojohnson, yeojohnson_normmax
+from sklearn.preprocessing import RobustScaler, PowerTransformer
 
 from tpu_graphs.baselines.layout.features import (
         compute_pagerank,
@@ -545,55 +548,104 @@ class NpzDataset(NamedTuple):
             + 1
         )
 
-    def _get_normalizer(self, tensor):
-        mean, variance = tf.nn.moments(tensor, axes=[0])
-        columns_to_keep = tf.reduce_max(tensor, axis=0) != tf.reduce_min(tensor, axis=0)
-        print(f"Keeping {sum(columns_to_keep.numpy())} columns")
-        masked_tensor = tf.boolean_mask(tensor, columns_to_keep, axis=1)
-        train_mean, train_variance = tf.nn.moments(masked_tensor, axes=[0])
-        eigenvector_matrix = compute_pca_components(masked_tensor)
-        return columns_to_keep, train_mean, train_variance, eigenvector_matrix
+    def _get_normalizer(self, feature_matrix):
+        print("computing mask")
+        max_feat = tf.reduce_max(feature_matrix, axis=0, keepdims=True)
+        min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
+        mask = min_feat[0] != max_feat[0]
+        masked_matrix = tf.boolean_mask(feature_matrix, mask, axis=1)
+        savepickle(mask, 'mask.pkl')
+        print("fitting scaler")
+        rscaler = RobustScaler()
+        rscaler.fit(masked_matrix)
+        savepickle(rscaler, "rscaler.pkl")
+        print("fitting yeo-johnson lambdas")
+        ptformer = PowerTransformer(method='yeo-johnson')
+        ptformer.fit(rscaler.transform(masked_matrix))
+        savepickle(ptformer, 'ptformer.pkl')
+        return mask, rscaler, ptformer
 
-    def _apply_normalizer(self, feature_matrix, used_columns, mean, variance, eigenvector_matrix):
-        feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
-        feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
-        decorrelated_feature_matrix = tf.matmul(feature_matrix_standardized, eigenvector_matrix)
-        print_nans(decorrelated_feature_matrix)
-        return decorrelated_feature_matrix
+    def _apply_normalizer(self, feature_matrix, mask, rscaler, ptformer):
+        feature_matrix = tf.boolean_mask(feature_matrix, mask, axis=1)
+        print("performing rscaling")
+        scaled = rscaler.transform(feature_matrix)
+        savepickle(scaled, "scaled.pkl")
+
+        print("performing pforming")
+        normed = ptformer.transform(scaled)
+        savepickle(normed, 'normed.pkl')
+        return tf.convert_to_tensor(normed, dtype=tf.float32)
 
     def normalize(self, max_configs):
+        print("Getting node normalizer")
         normalizer_args = self._get_normalizer(self.train.node_feat)
+        print("Normalizing train")
         self.train.node_feat = self._apply_normalizer(
             self.train.node_feat, *normalizer_args
         )
+        print("Normalizing valid")
         self.validation.node_feat = self._apply_normalizer(
             self.validation.node_feat, *normalizer_args
         )
+        print("Normalizing test")
         self.test.node_feat = self._apply_normalizer(
             self.test.node_feat, *normalizer_args
         )
 
+        print("Getting config normalizer")
         normalizer_args = self._get_normalizer(self.train.node_config_feat)
+        print("Normalizing config train")
         self.train.node_config_feat = self._apply_normalizer(
             self.train.node_config_feat, *normalizer_args
         )
+        print("Normalizing config valid")
         self.validation.node_config_feat = self._apply_normalizer(
             self.validation.node_config_feat, *normalizer_args
         )
+        print("Normalizing config test")
         self.test.node_config_feat = self._apply_normalizer(
             self.test.node_config_feat, *normalizer_args
         )
 
 
+def scale_cols(m, col_ixs):
+    m = m.numpy()
+    for ix in col_ixs:
+        minix = min(m[:, ix])
+        maxix = max(m[:, ix])
+        m[:,ix] = (m[:,ix] - minix) / (maxix - minix)
+    m = tf.convert_to_tensor(m, dtype=tf.float32)
+    return m
 
+
+def savepickle(m, filename):
+    with open(filename, "wb") as f:
+        pickle.dump(m, f)
+
+
+def loadpickle(p):
+    with open(p, "rb") as f:
+        return pickle.load(f)
+
+
+def plot_outliers(feature_matrix):
+    num_features = feature_matrix.shape[1]
+
+    # Creating a box plot for each feature
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=feature_matrix, orient="h", palette="Set2")
+    plt.title("Box Plot for Each Feature")
+    plt.xlabel("Values")
+    plt.ylabel("Features")
+    plt.show()
 
 def get_npz_split(
     split_path: str, min_configs=2, max_configs=-1, cache_dir=None
 ) -> NpzDatasetPartition:
     """Returns data for a single partition."""
     glob_pattern = os.path.join(split_path, "*.npz")
-    #files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
     files = tf.io.gfile.glob(glob_pattern)
+    #files = sorted(tf.io.gfile.glob(glob_pattern))[:3]
 
     if not files:
         raise ValueError("No files matched: " + glob_pattern)

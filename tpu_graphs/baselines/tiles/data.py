@@ -353,6 +353,24 @@ class NpzDataset(NamedTuple):
     max_feat = tf.boolean_mask(max_feat, used_columns, axis=1)
     return (feature_matrix - min_feat) / (max_feat - min_feat)
 
+  """
+  def _get_normalizer(self, tensor):
+    mean, variance = tf.nn.moments(tensor, axes=[0])
+    columns_to_keep = tf.reduce_max(tensor, axis=0) != tf.reduce_min(tensor, axis=0)
+    print(f"Keeping {sum(columns_to_keep.numpy())} columns")
+    masked_tensor = tf.boolean_mask(tensor, columns_to_keep, axis=1)
+    train_mean, train_variance = tf.nn.moments(masked_tensor, axes=[0])
+    eigenvector_matrix = compute_pca_components(masked_tensor)
+    return columns_to_keep, train_mean, train_variance, eigenvector_matrix
+
+  def _apply_normalizer(self, feature_matrix, used_columns, mean, variance, eigenvector_matrix):
+    feature_matrix = tf.boolean_mask(feature_matrix, used_columns, axis=1)
+    feature_matrix_standardized = (feature_matrix - mean) / tf.sqrt(variance)
+    decorrelated_feature_matrix = tf.matmul(feature_matrix_standardized, eigenvector_matrix)
+    print_nans(decorrelated_feature_matrix)
+    return decorrelated_feature_matrix
+  """
+
   def normalize(self):
     """Removes constant features and normalizes remaining onto [0, 1].
 
