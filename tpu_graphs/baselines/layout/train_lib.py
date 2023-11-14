@@ -77,6 +77,7 @@ _INFERENCE_CONFIGS_BATCH_SIZE = 8  # For producing inference csv, post-train.
 
 def train(args: train_args.TrainArgs):
   """Training loop. `train_args.py` contains description of arguments."""
+  print(train_args.TrainArgs)
   out_dir = os.path.expanduser(args.out_dir)
   if not tf.io.gfile.exists(out_dir):
     tf.io.gfile.makedirs(out_dir)
