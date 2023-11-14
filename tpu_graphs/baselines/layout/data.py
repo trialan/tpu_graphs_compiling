@@ -554,26 +554,21 @@ class NpzDataset(NamedTuple):
         min_feat = tf.reduce_min(feature_matrix, axis=0, keepdims=True)
         mask = min_feat[0] != max_feat[0]
         masked_matrix = tf.boolean_mask(feature_matrix, mask, axis=1)
-        savepickle(mask, 'mask.pkl')
         print("fitting scaler")
         rscaler = RobustScaler()
         rscaler.fit(masked_matrix)
-        savepickle(rscaler, "rscaler.pkl")
         print("fitting yeo-johnson lambdas")
         ptformer = PowerTransformer(method='yeo-johnson')
         ptformer.fit(rscaler.transform(masked_matrix))
-        savepickle(ptformer, 'ptformer.pkl')
         return mask, rscaler, ptformer
 
     def _apply_normalizer(self, feature_matrix, mask, rscaler, ptformer):
         feature_matrix = tf.boolean_mask(feature_matrix, mask, axis=1)
         print("performing rscaling")
         scaled = rscaler.transform(feature_matrix)
-        savepickle(scaled, "scaled.pkl")
 
         print("performing pforming")
         normed = ptformer.transform(scaled)
-        savepickle(normed, 'normed.pkl')
         return tf.convert_to_tensor(normed, dtype=tf.float32)
 
     def normalize(self, max_configs):
