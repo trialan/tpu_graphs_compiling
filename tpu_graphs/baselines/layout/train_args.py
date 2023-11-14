@@ -28,7 +28,7 @@ _EARLY_STOP = flags.DEFINE_integer(
     'If held-out validation does not improve after this many epochs, then '
     'training will stop.')
 _LEARNING_RATE = flags.DEFINE_float(
-    'lr', 1e-3, 'Learning rate for Adam optimizer.')
+        'lr', 0.00043336959557788455, 'Learning rate for Adam optimizer.') #old value: 1e-3
 _CLIP_NORM = flags.DEFINE_float(
     'clip_norm', 1e-2, 'Max L2 norm of gradient per tensor.')
 _NUM_CONFIGS = flags.DEFINE_integer(
